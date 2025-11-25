@@ -99,6 +99,7 @@ body {
     overflow-y: auto;
     display: flex;
     flex-direction: column;
+    min-height: 0;
 }
 
 /* ========================================
@@ -364,6 +365,7 @@ body {
     margin-bottom: var(--spacing-md);
     align-items: center;
     flex-direction: column;
+    flex-shrink: 0;
 }
 
 .character-silhouette {
@@ -427,6 +429,10 @@ body {
     margin-bottom: var(--spacing-md);
     box-shadow: 0 2px 8px rgba(0, 31, 63, 0.1);
     transition: all var(--transition);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    flex-grow: 1;
 }
 
 .clues-section:hover {
@@ -438,11 +444,15 @@ body {
     margin-bottom: var(--spacing-sm);
     color: var(--navy);
     font-weight: 600;
+    flex-shrink: 0;
 }
 
 .clues-container {
     min-height: 120px;
     margin-bottom: var(--spacing-sm);
+    overflow-y: auto;
+    flex-grow: 1;
+    min-height: 0;
 }
 
 .clue-item {
@@ -624,6 +634,7 @@ body {
     gap: var(--spacing-md);
     margin-bottom: var(--spacing-md);
     flex-wrap: wrap;
+    flex-shrink: 0;
 }
 
 .guess-input {
@@ -659,6 +670,7 @@ body {
     flex-direction: column;
     gap: var(--spacing-sm);
     margin-top: var(--spacing-md);
+    flex-shrink: 0;
 }
 
 .feedback-message {
@@ -901,7 +913,8 @@ body {
     margin-bottom: var(--spacing-md);
     display: flex;
     flex-direction: column;
-    max-height: 400px;
+    flex-grow: 1;
+    min-height: 0;
     box-shadow: 0 2px 8px rgba(0, 31, 63, 0.1);
     transition: all var(--transition);
 }
@@ -915,6 +928,7 @@ body {
     justify-content: space-between;
     align-items: center;
     gap: var(--spacing-sm);
+    flex-shrink: 0;
 }
 
 .conversation-title {
@@ -980,6 +994,7 @@ body {
     flex-direction: column;
     gap: var(--spacing-sm);
     padding: var(--spacing-xs);
+    min-height: 0;
 }
 
 .empty-state {
