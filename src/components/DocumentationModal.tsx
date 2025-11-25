@@ -43,10 +43,15 @@ export default function DocumentationModal({ isVisible, onClose, llmMode }: Docu
 
               <section className="docs-section">
                 <h3>Scoring (AI Mode)</h3>
-                <p>Base score: <strong>100 points</strong></p>
-                <p>Each question: <strong>-5 points</strong></p>
-                <p>Minimum: <strong>25 points</strong></p>
-                <p>Quick bonus: <strong>+20 points</strong> (if guessed in under 5 questions)</p>
+                <p>Start with <strong>100 points</strong> per round.</p>
+                <ul className="docs-list">
+                  <li>Each question/adaptive hint: <strong>-5 points</strong></li>
+                  <li>Each consecutive wrong guess: <strong>-5 points</strong></li>
+                </ul>
+                <p>
+                  Rounds can't go below <strong>25 points</strong>, so keep hints and misses low for the best score.
+                  The header shows the base points and every penalty applied for the last round.
+                </p>
               </section>
             </>
           ) : (
@@ -70,9 +75,15 @@ export default function DocumentationModal({ isVisible, onClose, llmMode }: Docu
 
               <section className="docs-section">
                 <h3>Scoring (Classic Mode)</h3>
-                <p>Base score: <strong>100 points</strong></p>
-                <p>Each clue revealed: <strong>-10 points</strong></p>
-                <p>Minimum: <strong>50 points</strong></p>
+                <p>Start with <strong>100 points</strong> per round.</p>
+                <ul className="docs-list">
+                  <li>Every extra clue beyond the first: <strong>-10 points</strong></li>
+                  <li>Each consecutive wrong guess: <strong>-5 points</strong></li>
+                </ul>
+                <p>
+                  Rounds can't go below <strong>25 points</strong>, so guess confidently and use clues wisely.
+                  The header shows the base points and every penalty applied for the last round.
+                </p>
               </section>
             </>
           )}
@@ -83,7 +94,7 @@ export default function DocumentationModal({ isVisible, onClose, llmMode }: Docu
               <li>Enter the person's full name or last name</li>
               <li>Spelling variations are usually accepted</li>
               <li>In AI mode, the AI validates guesses intelligently</li>
-              <li>Wrong guesses don't penalize your score - keep trying!</li>
+              <li>Consecutive wrong guesses subtract a few points, so adjust your approach if you're stuck.</li>
             </ul>
           </section>
 
