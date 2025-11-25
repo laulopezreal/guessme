@@ -14,6 +14,8 @@ export interface HistoricFigure {
   name: string;
   alternateNames: string[];
   clues: Clue[];
+  eraTags?: string[];
+  voiceLine?: string;
 }
 
 export interface GameState {

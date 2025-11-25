@@ -301,6 +301,60 @@ body {
     color: var(--navy);
 }
 
+.score-breakdown {
+    align-items: stretch;
+    min-width: 260px;
+    gap: var(--spacing-sm);
+}
+
+.score-breakdown-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--spacing-sm);
+}
+
+.score-breakdown-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    width: 100%;
+}
+
+.breakdown-row,
+.breakdown-total {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--spacing-sm);
+}
+
+.breakdown-label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    color: var(--navy);
+    font-weight: 600;
+}
+
+.breakdown-helper {
+    font-size: var(--font-size-xs);
+    font-weight: 400;
+    color: rgba(0, 31, 63, 0.8);
+}
+
+.breakdown-value {
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color: var(--navy);
+    font-weight: 700;
+}
+
+.breakdown-total {
+    padding-top: 0.25rem;
+    border-top: 1px solid rgba(0, 31, 63, 0.2);
+    margin-top: 0.25rem;
+}
+
 /* ========================================
    Character Silhouette
    ======================================== */
@@ -308,6 +362,8 @@ body {
     display: flex;
     justify-content: center;
     margin-bottom: var(--spacing-md);
+    align-items: center;
+    flex-direction: column;
 }
 
 .character-silhouette {
@@ -340,6 +396,24 @@ body {
     content: '✓';
     font-size: 3rem;
     color: var(--navy);
+}
+
+.era-tags {
+    display: flex;
+    gap: var(--spacing-xs);
+    margin-top: var(--spacing-sm);
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.era-tag {
+    border: 1px solid var(--navy);
+    color: var(--navy);
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    font-size: var(--font-size-xs);
+    letter-spacing: 0.02em;
+    background: var(--white);
 }
 
 /* ========================================
@@ -614,6 +688,14 @@ body {
     background: var(--white);
     border: 2px dashed var(--navy);
     color: var(--navy);
+}
+
+.feedback-message.persona {
+    background: var(--navy);
+    color: var(--white);
+    border: 2px solid var(--navy);
+    font-style: italic;
+    letter-spacing: 0.01em;
 }
 
 .adaptive-banner {

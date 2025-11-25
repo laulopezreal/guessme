@@ -4,6 +4,8 @@ export const historicFigures: HistoricFigure[] = [
   {
     name: "Albert Einstein",
     alternateNames: ["einstein"],
+    eraTags: ["Modern Era", "Physics"],
+    voiceLine: "Imagination will take you everywhere—ready for your next thought experiment?",
     clues: [
       { text: "I was born in Germany in 1879.", difficulty: 'hard' },
       { text: "I won the Nobel Prize in Physics in 1921.", difficulty: 'medium' },
@@ -15,6 +17,8 @@ export const historicFigures: HistoricFigure[] = [
   {
     name: "Galileo Galilei",
     alternateNames: ["galileo"],
+    eraTags: ["Renaissance", "Astronomy"],
+    voiceLine: "And yet it moves. Care to observe more?",
     clues: [
       { text: "I was born in Pisa, Italy in 1564.", difficulty: 'hard' },
       { text: "I am known as the father of modern observational astronomy.", difficulty: 'medium' },
@@ -26,6 +30,8 @@ export const historicFigures: HistoricFigure[] = [
   {
     name: "Leonardo da Vinci",
     alternateNames: ["leonardo", "da vinci"],
+    eraTags: ["Renaissance", "Art & Invention"],
+    voiceLine: "Simplicity is the ultimate sophistication. Ready for another masterpiece?",
     clues: [
       { text: "I was born in Italy in 1452.", difficulty: 'hard' },
       { text: "I was a polymath: artist, scientist, engineer, and inventor.", difficulty: 'medium' },
@@ -37,6 +43,8 @@ export const historicFigures: HistoricFigure[] = [
   {
     name: "William Shakespeare",
     alternateNames: ["shakespeare"],
+    eraTags: ["Elizabethan", "Literature"],
+    voiceLine: "All the world's a stage—shall we play another round?",
     clues: [
       { text: "I was born in Stratford-upon-Avon, England in 1564.", difficulty: 'hard' },
       { text: "I am considered the greatest writer in the English language.", difficulty: 'medium' },
@@ -48,6 +56,8 @@ export const historicFigures: HistoricFigure[] = [
   {
     name: "Marie Curie",
     alternateNames: ["curie", "marie sklodowska-curie"],
+    eraTags: ["Industrial Age", "Chemistry"],
+    voiceLine: "Nothing in life is to be feared—it is only to be understood. Onward?",
     clues: [
       { text: "I was born in Poland in 1867.", difficulty: 'hard' },
       { text: "I was the first woman to win a Nobel Prize.", difficulty: 'medium' },
@@ -59,6 +69,8 @@ export const historicFigures: HistoricFigure[] = [
   {
     name: "Isaac Newton",
     alternateNames: ["newton"],
+    eraTags: ["Scientific Revolution", "Mathematics"],
+    voiceLine: "If I have seen further, it is by standing on shoulders—care to climb higher?",
     clues: [
       { text: "I was born in England in 1643.", difficulty: 'hard' },
       { text: "I formulated the laws of motion and universal gravitation.", difficulty: 'medium' },
@@ -70,6 +82,8 @@ export const historicFigures: HistoricFigure[] = [
   {
     name: "Nikola Tesla",
     alternateNames: ["tesla"],
+    eraTags: ["Industrial Age", "Engineering"],
+    voiceLine: "The present is theirs; the future is mine. Ready to spark another idea?",
     clues: [
       { text: "I was born in the Austrian Empire (modern-day Croatia) in 1856.", difficulty: 'hard' },
       { text: "I was a brilliant inventor and electrical engineer.", difficulty: 'medium' },
@@ -81,6 +95,8 @@ export const historicFigures: HistoricFigure[] = [
   {
     name: "Napoleon Bonaparte",
     alternateNames: ["napoleon"],
+    eraTags: ["Napoleonic Era", "Military"],
+    voiceLine: "Impossible is a word to be found only in the dictionary of fools. March to the next battle?",
     clues: [
       { text: "I was born on the island of Corsica in 1769.", difficulty: 'hard' },
       { text: "I became Emperor of France in 1804.", difficulty: 'medium' },
@@ -92,6 +108,8 @@ export const historicFigures: HistoricFigure[] = [
   {
     name: "Joan of Arc",
     alternateNames: ["joan", "jeanne d'arc"],
+    eraTags: ["Middle Ages", "Leadership"],
+    voiceLine: "I am not afraid—I was born to do this. Shall we ride again?",
     clues: [
       { text: "I was a peasant girl born in France around 1412.", difficulty: 'hard' },
       { text: "I claimed to receive visions from God telling me to support France.", difficulty: 'medium' },
@@ -103,6 +121,8 @@ export const historicFigures: HistoricFigure[] = [
   {
     name: "Queen Elizabeth I",
     alternateNames: ["elizabeth i", "elizabeth", "queen elizabeth"],
+    eraTags: ["Elizabethan", "Statesmanship"],
+    voiceLine: "I know I have the body of a weak and feeble woman, but the heart of a king. Ready for another reign?",
     clues: [
       { text: "I was born in England in 1533.", difficulty: 'hard' },
       { text: "I became Queen of England in 1558 and ruled for 45 years.", difficulty: 'medium' },

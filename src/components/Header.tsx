@@ -26,20 +26,68 @@ export default function Header({
     if (!lastRoundBreakdown) return null;
 
     const { cluesUsed, adaptiveHintsUsed, consecutiveMisses } = lastRoundBreakdown;
-    const formatPenalty = (label: string, count: number, penalty: number) => {
-      if (penalty === 0) return `${label} 0`;
-      const pluralizedLabel = count === 1 ? label : `${label}s`;
-      return `${label} (${count} ${pluralizedLabel}) ${penalty}`;
-    };
+    const breakdownItems = [
+      {
+        label: 'Base points',
+        helper: `${lastRoundBreakdown.basePoints} starting points`,
+        value: lastRoundBreakdown.basePoints,
+      },
+      {
+        label: 'Clue penalty',
+        helper: `${Math.max(0, cluesUsed - 1)} extra ${cluesUsed - 1 === 1 ? 'clue' : 'clues'} used`,
+        value: -lastRoundBreakdown.cluePenalty,
+      },
+      {
+        label: 'Hint penalty',
+        helper: `${adaptiveHintsUsed} ${adaptiveHintsUsed === 1 ? 'hint' : 'hints'} asked`,
+        value: -lastRoundBreakdown.hintPenalty,
+      },
+      {
+        label: 'Miss penalty',
+        helper: `${consecutiveMisses} ${consecutiveMisses === 1 ? 'miss' : 'misses'} recorded`,
+        value: -lastRoundBreakdown.wrongGuessPenalty,
+      },
+    ];
+
+    const minApplied = lastRoundBreakdown.total !== lastRoundBreakdown.rawTotal;
 
     return (
-      <div className="score-item">
-        <span className="score-label">
-          Last Round{lastRoundNumber ? ` (Round ${lastRoundNumber})` : ''}
-        </span>
-        <span className="score-value">
-          {`${lastRoundBreakdown.basePoints} - ${formatPenalty('clue', cluesUsed, lastRoundBreakdown.cluePenalty)} - ${formatPenalty('hint', adaptiveHintsUsed, lastRoundBreakdown.hintPenalty)} - ${formatPenalty('miss', consecutiveMisses, lastRoundBreakdown.wrongGuessPenalty)} = ${lastRoundBreakdown.total}`}
-        </span>
+      <div className="score-item score-breakdown" aria-live="polite">
+        <div className="score-breakdown-heading">
+          <span className="score-label">
+            Last Round{lastRoundNumber ? ` (Round ${lastRoundNumber})` : ''}
+          </span>
+          <span className="score-value">{lastRoundBreakdown.total}</span>
+        </div>
+
+        <div className="score-breakdown-rows" role="list" aria-label="Last round score details">
+          {breakdownItems.map(item => (
+            <div className="breakdown-row" role="listitem" key={item.label}>
+              <div className="breakdown-label">
+                <span>{item.label}</span>
+                <span className="breakdown-helper">{item.helper}</span>
+              </div>
+              <span className="breakdown-value">
+                {item.value > 0 ? `+${item.value}` : item.value}
+              </span>
+            </div>
+          ))}
+
+          {minApplied && (
+            <div className="breakdown-row" role="listitem">
+              <div className="breakdown-label">
+                <span>Minimum applied</span>
+                <span className="breakdown-helper">Scores can’t drop below 25 points</span>
+              </div>
+              <span className="breakdown-value">{lastRoundBreakdown.total}</span>
+            </div>
+          )}
+
+          <div className="breakdown-total" aria-label="Total points for last round">
+            <span>Total</span>
+            <span className="breakdown-value">{lastRoundBreakdown.total}</span>
+          </div>
+        </div>
       </div>
     );
   };
