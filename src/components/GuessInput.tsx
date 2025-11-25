@@ -25,6 +25,10 @@ export default function GuessInput({
   const PROFANITY_LIST = ['fuck', 'shit', 'bitch', 'asshole', 'bastard', 'damn'];
   const MAX_QUESTION_LENGTH = 200;
 
+  // Escape a string for use in a RegExp constructor to avoid accidental
+  // interpretation of special characters coming from the list entries.
+  const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\$&");
+
   // Heuristic to detect when the user is probably making a guess instead of
   // asking a question while in AI mode.
   const isLikelyGuess = (raw: string): boolean => {
@@ -81,7 +85,10 @@ export default function GuessInput({
       return false;
     }
 
-    const profanityRegex = new RegExp(`\\b(${PROFANITY_LIST.join('|')})\\b`, 'i');
+    // Build a safe regex from the profanity list by escaping entries and
+    // using a non-capturing group. Word boundaries are preserved to avoid
+    // matching substrings inside harmless words.
+    const profanityRegex = new RegExp(`\\b(?:${PROFANITY_LIST.map(escapeRegExp).join('|')})\\b`, 'i');
     if (profanityRegex.test(trimmed)) {
       onValidationError?.('Please keep questions family-friendly.');
       return false;
