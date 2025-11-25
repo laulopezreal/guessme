@@ -30,6 +30,7 @@ export default function DocumentationModal({ isVisible, onClose, llmMode }: Docu
                   <li>A historic figure greets you in character</li>
                   <li>Ask questions to learn more about them</li>
                   <li>The AI responds as that person, giving hints without revealing their name</li>
+                  <li>You have 15 questions per conversation—restart the chat if you need more</li>
                   <li>Toggle to "Submit Guess" mode when ready</li>
                 </ul>
                 <p><strong>Tips:</strong></p>
@@ -52,6 +53,7 @@ export default function DocumentationModal({ isVisible, onClose, llmMode }: Docu
                   Rounds can't go below <strong>25 points</strong>, so keep hints and misses low for the best score.
                   The header shows the base points and every penalty applied for the last round.
                 </p>
+                <p>Question cap: <strong>15 per chat</strong> before you must restart.</p>
               </section>
             </>
           ) : (
