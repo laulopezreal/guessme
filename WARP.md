@@ -147,12 +147,7 @@ The TypeScript compiler will validate the structure matches the `HistoricFigure`
 
 ### Modifying Scoring
 
-The scoring logic is in `App.tsx` (`handleGuess` callback). The calculation uses `calculatePoints()` from `src/utils/gameUtils.ts`:
-```typescript
-export function calculatePoints(cluesUsed: number): number {
-  return Math.max(50, 100 - (cluesUsed - 1) * 10);
-}
-```
+Classic mode uses `classicScoreWeights` (base 100, min 50, -10 points per extra clue, -5 per wrong guess) and AI mode uses `llmScoreWeights` (base 100, min 25, -5 per question/hint, -5 per wrong guess). Both live in `src/utils/gameUtils.ts` and are consumed via `calculatePoints(scoringInputs, weights)`. Update the weights or inputs there if the scoring rules change, and the header breakdown plus documentation will stay consistent.
 
 ### Styling Updates
 

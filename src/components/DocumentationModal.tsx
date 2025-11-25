@@ -83,7 +83,7 @@ export default function DocumentationModal({ isVisible, onClose, llmMode }: Docu
                   <li>Each consecutive wrong guess: <strong>-5 points</strong></li>
                 </ul>
                 <p>
-                  Rounds can't go below <strong>25 points</strong>, so guess confidently and use clues wisely.
+                  Rounds can't go below <strong>50 points</strong>, so guess confidently and use clues wisely.
                   The header shows the base points and every penalty applied for the last round.
                 </p>
               </section>
