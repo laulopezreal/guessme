@@ -8,13 +8,16 @@ export default function Toggle({ isOn, onToggle, disabled = false }: ToggleProps
   return (
     <div className="toggle-container">
       <div className={`toggle-box ${isOn ? 'toggle-box-on' : 'toggle-box-off'}`}>
-        <label 
+        <button
+          type="button"
+          role="switch"
+          aria-checked={isOn}
           className={`toggle-switch ${isOn ? 'toggle-switch-on' : 'toggle-switch-off'}`}
-          onClick={disabled ? undefined : onToggle}
-          style={{ cursor: disabled ? 'not-allowed' : 'pointer' }}
+          onClick={onToggle}
+          disabled={disabled}
         >
           <div className={`toggle-yoke ${isOn ? 'toggle-yoke-on' : 'toggle-yoke-off'}`}></div>
-        </label>
+        </button>
       </div>
     </div>
   );
