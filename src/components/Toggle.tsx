@@ -2,23 +2,23 @@ interface ToggleProps {
   isOn: boolean;
   onToggle: () => void;
   disabled?: boolean;
+  'aria-label'?: string;
 }
 
-export default function Toggle({ isOn, onToggle, disabled = false }: ToggleProps) {
+export default function Toggle({ isOn, onToggle, disabled = false, 'aria-label': ariaLabel }: ToggleProps) {
   return (
     <div className="toggle-container">
-      <div className={`toggle-box ${isOn ? 'toggle-box-on' : 'toggle-box-off'}`}>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={isOn}
-          className={`toggle-switch ${isOn ? 'toggle-switch-on' : 'toggle-switch-off'}`}
-          onClick={onToggle}
-          disabled={disabled}
-        >
-          <span className={`toggle-yoke ${isOn ? 'toggle-yoke-on' : 'toggle-yoke-off'}`}></span>
-        </button>
-      </div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={isOn}
+        aria-label={ariaLabel}
+        className={`toggle-box ${isOn ? 'toggle-box-on' : 'toggle-box-off'}`}
+        onClick={onToggle}
+        disabled={disabled}
+      >
+        <span className={`toggle-yoke ${isOn ? 'toggle-yoke-on' : 'toggle-yoke-off'}`}></span>
+      </button>
     </div>
   );
 }

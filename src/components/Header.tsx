@@ -27,6 +27,7 @@ export default function Header({ score, round, llmMode, onToggleMode, onShowDocs
               isOn={llmMode} 
               onToggle={onToggleMode} 
               disabled={disabled}
+              aria-label={`Switch to ${llmMode ? 'Classic' : 'AI'} mode`}
             />
           </div>
         </div>

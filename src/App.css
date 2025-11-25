@@ -198,7 +198,11 @@ body {
     width: 4.5rem;
     border-radius: 40px;
     border: 2px solid var(--navy);
-    transition: all 0.4s ease;
+    transition: transform 0.4s ease, background-color 0.4s ease;
+    padding: 0.1875rem;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
 }
 
 .toggle-box-off {
@@ -209,45 +213,39 @@ body {
     background-color: var(--navy);
 }
 
-.toggle-switch {
-    height: 26px;
-    width: 62px;
-    margin-top: 3px;
-    margin-left: 3px;
-    border-radius: 30px;
-    border: 2px solid var(--navy);
-    display: block;
-    transition: background-color 0.4s ease;
-}
-
-.toggle-switch-off {
-    background-color: var(--white);
-}
-
-.toggle-switch-on {
-    background-color: var(--navy);
-}
-
 .toggle-yoke {
     height: 1.1rem;
     width: 1.1rem;
-    margin-top: 0.15rem;
     border-radius: 20px;
-    cursor: pointer;
     transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 0 0 0 rgba(0, 31, 63, 0.5);
+    position: relative;
+    display: block;
+    pointer-events: none;
 }
 
-.toggle-yoke:hover {
+.toggle-yoke::before {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 20px;
+    background: rgba(0, 31, 63, 0.5);
+    opacity: 0;
+    transform: scale(1);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.toggle-yoke:hover::before {
     animation: pulse 1.5s ease;
 }
 
 @keyframes pulse {
     0%, 100% {
-        box-shadow: 0 0 0 0 rgba(0, 31, 63, 0.5);
+        opacity: 0.5;
+        transform: scale(1);
     }
     50% {
-        box-shadow: 0 0 0 4px rgba(0, 31, 63, 0);
+        opacity: 0;
+        transform: scale(1.4);
     }
 }
 
