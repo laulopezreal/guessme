@@ -24,8 +24,6 @@ function App() {
   const [revealedClues, setRevealedClues] = useState<Array<Clue & { isAdaptive?: boolean }>>([]);
   const [consecutiveMisses, setConsecutiveMisses] = useState(0);
   const [score, setScore] = useState(0);
-  const [lastRoundBreakdown, setLastRoundBreakdown] = useState<ReturnType<typeof calculatePoints> | null>(null);
-  const [lastRoundNumber, setLastRoundNumber] = useState<number | null>(null);
   const [round, setRound] = useState(1);
   const [gameEnded, setGameEnded] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState('');
@@ -82,8 +80,6 @@ function App() {
     setRevealedClues([]);
     setConsecutiveMisses(0);
     setScore(0);
-    setLastRoundBreakdown(null);
-    setLastRoundNumber(null);
     setRound(1);
     setGameEnded(false);
     setFeedbackMessage('');
@@ -219,8 +215,6 @@ function App() {
             llmScoreWeights
           );
           setScore(prev => prev + breakdown.total);
-          setLastRoundBreakdown(breakdown);
-          setLastRoundNumber(round);
           setFeedbackMessage(
             `${result.feedback} You earned ${breakdown.total} points!`
           );
@@ -261,8 +255,6 @@ function App() {
         consecutiveMisses,
       });
       setScore(prev => prev + breakdown.total);
-      setLastRoundBreakdown(breakdown);
-      setLastRoundNumber(round);
       setFeedbackMessage(
         `Correct! It's ${currentFigure.name}! You earned ${breakdown.total} points!`
       );
@@ -358,14 +350,10 @@ function App() {
   return (
     <div className="game-container">
       <Header
-        score={score}
-        round={round}
         llmMode={llmMode}
         onToggleMode={handleModeToggle}
         onShowDocs={handleShowDocs}
         disabled={inputDisabled}
-        lastRoundBreakdown={lastRoundBreakdown}
-        lastRoundNumber={lastRoundNumber}
       />
       
       <div className="character-and-score">
