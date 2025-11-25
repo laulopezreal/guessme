@@ -9,15 +9,18 @@ import ConversationView from './components/ConversationView';
 import WelcomeModal from './components/WelcomeModal';
 import DocumentationModal from './components/DocumentationModal';
 import { getEnabledFigures } from './data/figuresConfig';
-import { shuffleArray, calculatePoints } from './utils/gameUtils';
+import { shuffleArray, calculatePoints, selectNextClue } from './utils/gameUtils';
 import { isLLMConfigured, getInitialGreeting, sendMessage, validateGuess } from './services/llmService';
-import type { HistoricFigure, Message } from './types';
+import type { Clue, HistoricFigure, Message } from './types';
 import './App.css';
+
+const MISS_THRESHOLD = 2;
 
 function App() {
   const [shuffledFigures, setShuffledFigures] = useState<HistoricFigure[]>([]);
   const [currentFigureIndex, setCurrentFigureIndex] = useState(0);
-  const [currentClueIndex, setCurrentClueIndex] = useState(0);
+  const [revealedClues, setRevealedClues] = useState<Array<Clue & { isAdaptive?: boolean }>>([]);
+  const [consecutiveMisses, setConsecutiveMisses] = useState(0);
   const [score, setScore] = useState(0);
   const [round, setRound] = useState(1);
   const [gameEnded, setGameEnded] = useState(false);
@@ -27,6 +30,7 @@ function App() {
   const [inputDisabled, setInputDisabled] = useState(false);
   const [showNextButton, setShowNextButton] = useState(false);
   const [triggerShake, setTriggerShake] = useState(false);
+  const [adaptiveHintNotice, setAdaptiveHintNotice] = useState('');
   
   // LLM mode state
   const [llmMode, setLlmMode] = useState(isLLMConfigured());
@@ -69,7 +73,8 @@ function App() {
     const shuffled = shuffleArray(enabledFigures);
     setShuffledFigures(shuffled);
     setCurrentFigureIndex(0);
-    setCurrentClueIndex(1); // Start with first clue revealed
+    setRevealedClues([]);
+    setConsecutiveMisses(0);
     setScore(0);
     setRound(1);
     setGameEnded(false);
@@ -80,6 +85,7 @@ function App() {
     setShowNextButton(false);
     setMessages([]);
     setQuestionsAsked(0);
+    setAdaptiveHintNotice('');
   }, []);
 
   // Initialize on mount
@@ -94,12 +100,29 @@ function App() {
     }
   }, [llmMode, currentFigure, messages.length, initializeConversation]);
 
-  // Reveal next clue
-  const revealNextClue = useCallback(() => {
-    if (currentFigure && currentClueIndex < currentFigure.clues.length) {
-      setCurrentClueIndex(prev => prev + 1);
+  // Reveal the first clue when a new figure loads
+  useEffect(() => {
+    if (!currentFigure) return;
+
+    const initialClue = currentFigure.clues[0];
+    setRevealedClues(initialClue ? [{ ...initialClue }] : []);
+    setConsecutiveMisses(0);
+    setAdaptiveHintNotice('');
+  }, [currentFigure]);
+
+  const revealNextClue = useCallback((misses = consecutiveMisses) => {
+    if (!currentFigure) return;
+
+    const { nextClue, adaptive } = selectNextClue(currentFigure, revealedClues, misses, MISS_THRESHOLD);
+
+    if (!nextClue || revealedClues.some(clue => clue.text === nextClue.text)) return;
+
+    setRevealedClues(prev => [...prev, { ...nextClue, isAdaptive: adaptive }]);
+
+    if (adaptive) {
+      setAdaptiveHintNotice('An adaptive hint was provided after repeated misses. Future points will factor this in.');
     }
-  }, [currentFigure, currentClueIndex]);
+  }, [consecutiveMisses, currentFigure, revealedClues]);
 
   // Handle asking a question (LLM mode)
   const handleAskQuestion = useCallback(async (question: string) => {
@@ -159,10 +182,17 @@ function App() {
           setIsRevealed(true);
           setInputDisabled(true);
           setShowNextButton(true);
+          setConsecutiveMisses(0);
+          setAdaptiveHintNotice('');
         } else {
           // Incorrect guess
           setFeedbackMessage(result.feedback);
           setFeedbackType('error');
+          const misses = consecutiveMisses + 1;
+          setConsecutiveMisses(misses);
+          if (misses >= MISS_THRESHOLD) {
+            revealNextClue(misses);
+          }
           setTriggerShake(true);
           setTimeout(() => setTriggerShake(false), 500);
         }
@@ -187,21 +217,28 @@ function App() {
 
     if (isCorrect) {
       // Correct guess
-      const points = calculatePoints(currentClueIndex);
+      const points = calculatePoints(revealedClues.length);
       setScore(prev => prev + points);
       setFeedbackMessage(`Correct! It's ${currentFigure.name}! You earned ${points} points!`);
       setFeedbackType('success');
       setIsRevealed(true);
       setInputDisabled(true);
       setShowNextButton(true);
+      setConsecutiveMisses(0);
+      setAdaptiveHintNotice('');
     } else {
       // Incorrect guess
       setFeedbackMessage('Not quite! Try again or reveal more clues.');
       setFeedbackType('error');
+      const misses = consecutiveMisses + 1;
+      setConsecutiveMisses(misses);
+      if (misses >= MISS_THRESHOLD) {
+        revealNextClue(misses);
+      }
       setTriggerShake(true);
       setTimeout(() => setTriggerShake(false), 500);
     }
-  }, [currentFigure, currentClueIndex, llmMode, messages, questionsAsked]);
+  }, [consecutiveMisses, currentFigure, llmMode, messages, questionsAsked, revealedClues.length, revealNextClue]);
 
   // Next figure
   const nextFigure = useCallback(() => {
@@ -211,7 +248,6 @@ function App() {
       setGameEnded(true);
     } else {
       setCurrentFigureIndex(nextIndex);
-      setCurrentClueIndex(1); // Auto-reveal first clue
       setRound(prev => prev + 1);
       setFeedbackMessage('');
       setFeedbackType('');
@@ -220,6 +256,9 @@ function App() {
       setShowNextButton(false);
       setMessages([]);
       setQuestionsAsked(0);
+      setRevealedClues([]);
+      setConsecutiveMisses(0);
+      setAdaptiveHintNotice('');
     }
   }, [currentFigureIndex, shuffledFigures.length]);
 
@@ -277,8 +316,8 @@ function App() {
           />
         ) : (
           <CluesList
-            clues={currentFigure.clues}
-            currentClueIndex={currentClueIndex}
+            revealedClues={revealedClues}
+            totalClues={currentFigure.clues.length}
             onRevealNextClue={revealNextClue}
             disabled={inputDisabled}
           />
@@ -292,7 +331,11 @@ function App() {
           llmMode={llmMode}
         />
 
-        <FeedbackMessage message={feedbackMessage} type={feedbackType} />
+        <FeedbackMessage
+          message={feedbackMessage}
+          type={feedbackType}
+          adaptiveHintNotice={adaptiveHintNotice}
+        />
 
         {showNextButton && (
           <button className="next-btn" onClick={nextFigure}>
