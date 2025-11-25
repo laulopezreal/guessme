@@ -75,6 +75,8 @@ body {
     height: 100vh;
     line-height: 1.6;
     overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 #root {
@@ -118,7 +120,7 @@ body {
 
 .navbar-controls {
     display: flex;
-    gap: var(--spacing-sm);
+    gap: var(--spacing-md);
     align-items: center;
 }
 
@@ -128,6 +130,11 @@ body {
     color: var(--navy);
     letter-spacing: -0.02em;
     margin: 0;
+    transition: all var(--transition);
+}
+
+.game-title:hover {
+    letter-spacing: 0;
 }
 
 .docs-btn {
@@ -147,31 +154,113 @@ body {
 .docs-btn:hover {
     background: var(--navy);
     color: var(--white);
+    transform: translateY(-2px);
 }
 
-.mode-toggle-btn {
-    background: var(--navy);
-    color: var(--white);
-    border: 2px solid var(--navy);
-    border-radius: var(--radius-md);
-    padding: var(--spacing-sm) var(--spacing-md);
-    font-family: var(--font-family);
+.docs-btn:active {
+    transform: translateY(0);
+}
+
+/* Mode Toggle Wrapper */
+.mode-toggle-wrapper {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.mode-label {
     font-size: var(--font-size-sm);
     font-weight: 600;
-    cursor: pointer;
-    transition: all var(--transition);
-    white-space: nowrap;
-}
-
-.mode-toggle-btn:hover:not(:disabled) {
-    background: var(--white);
     color: var(--navy);
+    min-width: 60px;
+    text-align: right;
+    transition: all var(--transition);
+    user-select: none;
 }
 
-.mode-toggle-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+.mode-label:hover {
+    transform: translateX(-2px);
 }
+
+/* Toggle Component Styles */
+.toggle-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.toggle-container:active .toggle-box {
+    transform: scale(0.95);
+}
+
+.toggle-box {
+    height: 2.25rem;
+    width: 4.5rem;
+    border-radius: 40px;
+    border: 2px solid var(--navy);
+    transition: all 0.4s ease;
+}
+
+.toggle-box-off {
+    background-color: var(--white);
+}
+
+.toggle-box-on {
+    background-color: var(--navy);
+}
+
+.toggle-switch {
+    height: 26px;
+    width: 62px;
+    margin-top: 3px;
+    margin-left: 3px;
+    border-radius: 30px;
+    border: 2px solid var(--navy);
+    display: block;
+    transition: background-color 0.4s ease;
+}
+
+.toggle-switch-off {
+    background-color: var(--white);
+}
+
+.toggle-switch-on {
+    background-color: var(--navy);
+}
+
+.toggle-yoke {
+    height: 1.1rem;
+    width: 1.1rem;
+    margin-top: 0.15rem;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 0 0 0 rgba(0, 31, 63, 0.5);
+}
+
+.toggle-yoke:hover {
+    animation: pulse 1.5s ease infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(0, 31, 63, 0.5);
+    }
+    50% {
+        box-shadow: 0 0 0 4px rgba(0, 31, 63, 0);
+    }
+}
+
+.toggle-yoke-off {
+    margin-left: 0.25rem;
+    background-color: var(--navy);
+}
+
+.toggle-yoke-on {
+    margin-left: 2.4rem;
+    background-color: var(--white);
+}
+
 
 .score-board {
     display: flex;
@@ -191,6 +280,12 @@ body {
     align-items: center;
     gap: 0.25rem;
     min-width: 120px;
+    transition: all var(--transition);
+}
+
+.score-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 0 var(--navy);
 }
 
 .score-label {
@@ -226,6 +321,11 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.character-silhouette:hover {
+    transform: scale(1.05);
 }
 
 .mystery-icon {
@@ -253,6 +353,12 @@ body {
     border-radius: var(--radius-lg);
     padding: var(--spacing-md);
     margin-bottom: var(--spacing-md);
+    box-shadow: 0 2px 8px rgba(0, 31, 63, 0.1);
+    transition: all var(--transition);
+}
+
+.clues-section:hover {
+    box-shadow: 0 4px 12px rgba(0, 31, 63, 0.15);
 }
 
 .clues-title {
@@ -323,7 +429,7 @@ body {
     font-size: var(--font-size-sm);
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--transition);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .reveal-btn {
@@ -336,6 +442,11 @@ body {
 .reveal-btn:hover:not(:disabled) {
     background: var(--navy);
     color: var(--white);
+    transform: translateY(-2px);
+}
+
+.reveal-btn:active:not(:disabled) {
+    transform: translateY(0);
 }
 
 .reveal-btn:disabled {
@@ -355,6 +466,11 @@ body {
 .submit-btn:hover:not(:disabled) {
     background: var(--white);
     color: var(--navy);
+    transform: translateY(-2px);
+}
+
+.submit-btn:active:not(:disabled) {
+    transform: translateY(0);
 }
 
 .submit-btn:disabled {
@@ -375,6 +491,12 @@ body {
 .modal-btn:hover {
     background: var(--white);
     color: var(--navy);
+    transform: translateY(-2px);
+}
+
+.next-btn:active,
+.modal-btn:active {
+    transform: translateY(0);
 }
 
 .btn-icon {
@@ -401,12 +523,14 @@ body {
     font-family: var(--font-family);
     font-size: var(--font-size-md);
     color: var(--navy);
-    transition: all var(--transition);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .guess-input:focus {
     outline: none;
     border-width: 3px;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 31, 63, 0.15);
 }
 
 .guess-input::placeholder {
@@ -453,6 +577,16 @@ body {
     align-items: center;
     justify-content: center;
     z-index: 1000;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 0.95;
+    }
 }
 
 .modal-content {
@@ -462,6 +596,19 @@ body {
     padding: var(--spacing-xl);
     max-width: 500px;
     text-align: center;
+    animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 8px 24px rgba(0, 31, 63, 0.3);
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .modal-title {
@@ -618,6 +765,12 @@ body {
     display: flex;
     flex-direction: column;
     max-height: 400px;
+    box-shadow: 0 2px 8px rgba(0, 31, 63, 0.1);
+    transition: all var(--transition);
+}
+
+.conversation-section:hover {
+    box-shadow: 0 4px 12px rgba(0, 31, 63, 0.15);
 }
 
 .conversation-title {

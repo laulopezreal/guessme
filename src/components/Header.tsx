@@ -1,3 +1,5 @@
+import Toggle from './Toggle';
+
 interface HeaderProps {
   score: number;
   round: number;
@@ -19,13 +21,14 @@ export default function Header({ score, round, llmMode, onToggleMode, onShowDocs
           >
             How to Play
           </button>
-          <button
-            className="mode-toggle-btn"
-            onClick={onToggleMode}
-            disabled={disabled}
-          >
-            {llmMode ? 'AI Mode' : 'Classic Mode'}
-          </button>
+          <div className="mode-toggle-wrapper">
+            <span className="mode-label">{llmMode ? 'AI' : 'Classic'}</span>
+            <Toggle 
+              isOn={llmMode} 
+              onToggle={onToggleMode} 
+              disabled={disabled}
+            />
+          </div>
         </div>
       </div>
       <div className="score-board">
