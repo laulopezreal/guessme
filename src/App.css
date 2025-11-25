@@ -280,7 +280,7 @@ body {
     align-items: center;
     gap: 0.25rem;
     min-width: 120px;
-    transition: all var(--transition);
+    transition: transform var(--transition), box-shadow var(--transition);
 }
 
 .score-item:hover {
