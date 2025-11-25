@@ -38,8 +38,8 @@ export default function GuessInput({
       return false;
     }
 
-    const containsProfanity = PROFANITY_LIST.some(word => trimmed.toLowerCase().includes(word));
-    if (containsProfanity) {
+    const profanityRegex = new RegExp(`\b(${PROFANITY_LIST.join('|')})\b`, 'i');
+    if (profanityRegex.test(trimmed)) {
       onValidationError?.('Please keep questions family-friendly.');
       return false;
     }
