@@ -1,14 +1,26 @@
 import OpenAI from 'openai';
 import type { HistoricFigure } from '../types';
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: import.meta.env.VITE_LLM_API_KEY,
-  dangerouslyAllowBrowser: true, // Note: For development only. Move to backend for production.
-});
-
+const API_KEY = import.meta.env.VITE_LLM_API_KEY;
 const MODEL = import.meta.env.VITE_LLM_MODEL || 'gpt-4o-mini';
 const MAX_TOKENS = 250;
+
+let openai: OpenAI | null = null;
+
+function getOpenAIClient(): OpenAI {
+  if (!API_KEY || API_KEY === 'your_api_key_here') {
+    throw new Error('LLM is not configured');
+  }
+
+  if (!openai) {
+    openai = new OpenAI({
+      apiKey: API_KEY,
+      dangerouslyAllowBrowser: true, // Note: For development only. Move to backend for production.
+    });
+  }
+
+  return openai;
+}
 
 export interface Message {
   role: 'user' | 'assistant' | 'system';
@@ -59,7 +71,8 @@ export async function sendMessage(
 ): Promise<string> {
   try {
     const systemPrompt = buildSystemPrompt(figure, hintLevel);
-    
+    const client = getOpenAIClient();
+
     const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
       { role: 'system', content: systemPrompt },
       ...conversationHistory.map(msg => ({
@@ -68,7 +81,7 @@ export async function sendMessage(
       })),
     ];
 
-    const completion = await openai.chat.completions.create({
+    const completion = await client.chat.completions.create({
       model: MODEL,
       messages,
       max_tokens: MAX_TOKENS,
@@ -111,7 +124,9 @@ Examples of tone:
 - An inventor might be imaginative and forward-thinking`;
   
   try {
-    const completion = await openai.chat.completions.create({
+    const client = getOpenAIClient();
+
+    const completion = await client.chat.completions.create({
       model: MODEL,
       messages: [
         { role: 'system', content: systemPrompt },
@@ -170,7 +185,9 @@ Feedback should be:
 - Helpful if partial (e.g., "You're describing me correctly! But can you name me?")
 - Gentle if incorrect (e.g., "Not quite, but keep asking questions!")`;
 
-    const completion = await openai.chat.completions.create({
+    const client = getOpenAIClient();
+
+    const completion = await client.chat.completions.create({
       model: MODEL,
       messages: [{ role: 'user', content: validationPrompt }],
       max_tokens: 150,
@@ -220,6 +237,5 @@ Feedback should be:
  * Check if the API is configured properly
  */
 export function isLLMConfigured(): boolean {
-  const apiKey = import.meta.env.VITE_LLM_API_KEY;
-  return !!apiKey && apiKey !== 'your_api_key_here';
+  return !!API_KEY && API_KEY !== 'your_api_key_here';
 }
