@@ -252,12 +252,12 @@ body {
 }
 
 .toggle-yoke-off {
-    margin-left: 0.25rem;
+    transform: translateX(0.25rem);
     background-color: var(--navy);
 }
 
 .toggle-yoke-on {
-    margin-left: 2.4rem;
+    transform: translateX(2.4rem);
     background-color: var(--white);
 }
 
