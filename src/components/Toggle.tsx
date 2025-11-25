@@ -16,7 +16,7 @@ export default function Toggle({ isOn, onToggle, disabled = false }: ToggleProps
           onClick={onToggle}
           disabled={disabled}
         >
-          <div className={`toggle-yoke ${isOn ? 'toggle-yoke-on' : 'toggle-yoke-off'}`}></div>
+          <span className={`toggle-yoke ${isOn ? 'toggle-yoke-on' : 'toggle-yoke-off'}`}></span>
         </button>
       </div>
     </div>
