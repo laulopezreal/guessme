@@ -42,17 +42,17 @@ export default function WelcomeModal({ isVisible, onStart, llmMode }: WelcomeMod
             </div>
           )}
 
-        <div className="scoring-info">
-          <h3>Scoring</h3>
-          <p>Base score: 100 points</p>
-          <p>
-            {llmMode
-              ? 'Each question or adaptive hint costs 5 points.'
-              : 'Each extra clue beyond the first costs 10 points.'}
-          </p>
-          <p>Consecutive wrong guesses always subtract 5 points.</p>
-          <p>Minimum score: {llmMode ? '25' : '50'} points</p>
-        </div>
+          <div className="scoring-info">
+            <h3>Scoring</h3>
+            <p>Base score: 100 points</p>
+            <p>
+              {llmMode
+                ? 'Each question or adaptive hint costs 5 points.'
+                : 'Each extra clue beyond the first costs 10 points.'}
+            </p>
+            <p>Consecutive wrong guesses always subtract 5 points.</p>
+            <p>Minimum score: {llmMode ? '25' : '50'} points</p>
+          </div>
         </div>
 
         <button className="modal-btn start-btn" onClick={onStart}>
