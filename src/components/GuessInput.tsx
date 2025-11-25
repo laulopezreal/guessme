@@ -40,12 +40,6 @@ export default function GuessInput({
 
     const lower = trimmed.toLowerCase();
 
-    // Common greetings/polite phrases that should not be treated as guesses.
-    const greetings = ['hello', 'welcome', 'hi', 'hey', 'greetings', 'thanks', 'thank you', 'please'];
-    if (greetings.some(greeting => lower === greeting || lower.startsWith(greeting + ' '))) {
-      return false;
-    }
-
     // Common guess-intent phrases.
     const guessPhrases = [
       "i think it's",
@@ -111,6 +105,17 @@ export default function GuessInput({
     }
 
     if (llmMode && isQuestionMode) {
+      const lower = value.toLowerCase();
+      const greetings = ['hello', 'welcome', 'hi', 'hey', 'greetings', 'thanks', 'thank you', 'please'];
+      
+      // Check if it's a greeting and show a playful message
+      if (greetings.some(greeting => lower === greeting || lower.startsWith(greeting + ' '))) {
+        onValidationError?.(
+          '👋 Nice to meet you! But we\'re here to play, not chat. Ask a smart question or make your guess to win! 😎'
+        );
+        return;
+      }
+
       // Autodetect guesses while the UI is in "Ask Question" mode.
       if (isLikelyGuess(value)) {
         onValidationError?.(
