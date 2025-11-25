@@ -30,6 +30,7 @@ function App() {
   const [gameEnded, setGameEnded] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState('');
   const [feedbackType, setFeedbackType] = useState<'success' | 'error' | ''>('');
+  const [personaLine, setPersonaLine] = useState('');
   const [isRevealed, setIsRevealed] = useState(false);
   const [inputDisabled, setInputDisabled] = useState(false);
   const [showNextButton, setShowNextButton] = useState(false);
@@ -90,6 +91,7 @@ function App() {
     setIsRevealed(false);
     setInputDisabled(false);
     setShowNextButton(false);
+    setPersonaLine('');
     setMessages([]);
     setQuestionsAsked(0);
     setAdaptiveHintNotice('');
@@ -220,6 +222,7 @@ function App() {
             `${result.feedback} You earned ${breakdown.total} points!`
           );
           setFeedbackType('success');
+          setPersonaLine(currentFigure.voiceLine ?? '');
           setIsRevealed(true);
           setInputDisabled(true);
           setShowNextButton(true);
@@ -261,6 +264,7 @@ function App() {
         `Correct! It's ${currentFigure.name}! You earned ${breakdown.total} points!`
       );
       setFeedbackType('success');
+      setPersonaLine(currentFigure.voiceLine ?? '');
       setIsRevealed(true);
       setInputDisabled(true);
       setShowNextButton(true);
@@ -292,6 +296,7 @@ function App() {
       setRound(prev => prev + 1);
       setFeedbackMessage('');
       setFeedbackType('');
+      setPersonaLine('');
       setIsRevealed(false);
       setInputDisabled(false);
       setShowNextButton(false);
@@ -361,7 +366,7 @@ function App() {
       />
       
       <main className="game-main">
-        <CharacterSilhouette revealed={isRevealed} />
+        <CharacterSilhouette revealed={isRevealed} eraTags={currentFigure.eraTags} />
         
         {llmMode ? (
           <ConversationView 
@@ -398,6 +403,7 @@ function App() {
           message={feedbackMessage}
           type={feedbackType}
           adaptiveHintNotice={adaptiveHintNotice}
+          personaLine={personaLine}
         />
 
         {showNextButton && (
