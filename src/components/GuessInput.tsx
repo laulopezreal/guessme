@@ -81,7 +81,7 @@ export default function GuessInput({
       return false;
     }
 
-    const profanityRegex = new RegExp(`\b(${PROFANITY_LIST.join('|')})\b`, 'i');
+    const profanityRegex = new RegExp(`\\b(${PROFANITY_LIST.join('|')})\\b`, 'i');
     if (profanityRegex.test(trimmed)) {
       onValidationError?.('Please keep questions family-friendly.');
       return false;
