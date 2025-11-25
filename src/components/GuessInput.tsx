@@ -25,6 +25,49 @@ export default function GuessInput({
   const PROFANITY_LIST = ['fuck', 'shit', 'bitch', 'asshole', 'bastard', 'damn'];
   const MAX_QUESTION_LENGTH = 200;
 
+  // Heuristic to detect when the user is probably making a guess instead of
+  // asking a question while in AI mode.
+  const isLikelyGuess = (raw: string): boolean => {
+    const trimmed = raw.trim();
+    if (!trimmed) return false;
+
+    // Anything ending with a question mark is treated as a question.
+    if (trimmed.endsWith('?')) return false;
+
+    const lower = trimmed.toLowerCase();
+
+    // Common guess-intent phrases.
+    const guessPhrases = [
+      "i think it's",
+      "i think its",
+      'my guess is',
+      "i'm guessing",
+      'could it be',
+      "it's ",
+      'its ',
+      'maybe it is',
+      "maybe it's",
+      'maybe its',
+    ];
+    if (guessPhrases.some(phrase => lower.startsWith(phrase) || lower.includes(` ${phrase}`))) {
+      return true;
+    }
+
+    const words = trimmed.split(/\s+/);
+
+    // Single word (likely a name) – treat as guess.
+    if (words.length === 1) {
+      return true;
+    }
+
+    // Short phrase with 2–3 words and minimal punctuation is also likely a name.
+    if (words.length <= 3 && !/[.,!?]/.test(trimmed)) {
+      return true;
+    }
+
+    return false;
+  };
+
   const validateQuestion = (): boolean => {
     const trimmed = input.trim();
 
@@ -48,22 +91,34 @@ export default function GuessInput({
   };
 
   const handleSubmit = () => {
-    if (!input.trim()) {
+    const value = input.trim();
+    if (!value) {
       onValidationError?.('Please enter a question or guess before submitting.');
       return;
     }
 
     if (llmMode && isQuestionMode) {
+      // Autodetect guesses while the UI is in "Ask Question" mode.
+      if (isLikelyGuess(value)) {
+        onSubmitGuess(value);
+        setIsQuestionMode(false); // reflect that we're now effectively in guess mode
+        setInput('');
+        return;
+      }
+
       if (questionLimitReached) {
         onValidationError?.('You have reached the question limit for this round.');
         return;
       }
       if (!onAskQuestion) return;
       if (!validateQuestion()) return;
-      onAskQuestion(input.trim());
-    } else {
-      onSubmitGuess(input.trim());
+      onAskQuestion(value);
+      setInput('');
+      return;
     }
+
+    // Classic mode or explicit guess mode.
+    onSubmitGuess(value);
     setInput('');
   };
 
