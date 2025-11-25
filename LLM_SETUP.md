@@ -1,0 +1,108 @@
+# LLM Integration Setup
+
+This guide walks you through setting up the LLM integration for interactive gameplay.
+
+## ✅ Step 1: Install Dependencies (COMPLETED)
+
+The OpenAI SDK has been installed:
+```bash
+npm install openai
+```
+
+## 🔑 Step 2: Configure Your API Key
+
+1. **Get an OpenAI API Key**
+   - Visit https://platform.openai.com/api-keys
+   - Create a new API key (keep it secret!)
+
+2. **Add it to `.env.local`**
+   - Open `.env.local` in the project root
+   - Replace `your_api_key_here` with your actual API key:
+   ```
+   VITE_LLM_API_KEY=sk-proj-your-actual-key-here
+   VITE_LLM_PROVIDER=openai
+   VITE_LLM_MODEL=gpt-4o-mini
+   ```
+
+3. **Restart the dev server**
+   - If the dev server is running, stop it (Ctrl+C) and start again
+   - This loads the new environment variables
+
+## 🧪 Step 3: Test the Integration
+
+1. **Start the dev server**
+   ```bash
+   npm run dev
+   ```
+
+2. **Open the test page**
+   - Navigate to `http://localhost:5173/test-llm.html`
+   - Click the test buttons in order (1 → 2 → 3 → 4)
+   - Each test should show a green success message
+
+## 📁 What Was Created
+
+### `/src/services/llmService.ts`
+The core LLM service with functions:
+- `isLLMConfigured()` - Check if API key is set
+- `getInitialGreeting(figure)` - Get AI greeting from historic figure
+- `sendMessage(history, figure, hintLevel)` - Send question and get response
+- `validateGuess(guess, figure, history)` - Intelligent guess validation
+
+### `/.env.local`
+Environment variables for API configuration (gitignored for security)
+
+### `/test-llm.html`
+Interactive test page to verify everything works
+
+## 🎮 Next Steps
+
+Now that the LLM service is working, we can:
+
+1. **Update data models** - Add `Message` interface to `types.ts`
+2. **Create ConversationView component** - Chat interface with message bubbles
+3. **Update App.tsx** - Add conversation state and handlers
+4. **Build the interactive gameplay** - Replace static clues with AI chat
+
+## 💰 Cost Considerations
+
+**gpt-4o-mini pricing (as of 2024):**
+- Input: ~$0.15 per 1M tokens
+- Output: ~$0.60 per 1M tokens
+
+**Estimated cost per game:**
+- ~10-15 questions per figure
+- ~200-300 tokens per interaction
+- **~$0.01-0.02 per complete game**
+
+Very affordable for development and small-scale usage!
+
+## 🔒 Security Notes
+
+- `.env.local` is gitignored - never commit API keys
+- `dangerouslyAllowBrowser: true` is used for development
+- **For production**: Build a backend proxy to hide the API key
+- Set spending limits in your OpenAI account
+
+## 🐛 Troubleshooting
+
+**"Failed to get response from AI"**
+- Check your API key is correct in `.env.local`
+- Verify you have credits in your OpenAI account
+- Check browser console for detailed errors
+
+**Environment variables not loading**
+- Restart the dev server after changing `.env.local`
+- Make sure filename is exactly `.env.local` (not `.env.local.txt`)
+- Vite only loads env vars starting with `VITE_`
+
+**CORS errors**
+- This is expected when calling OpenAI directly from browser
+- OpenAI allows browser requests, so this should work
+- If persistent, consider using a backend proxy
+
+## 📚 References
+
+- [OpenAI API Documentation](https://platform.openai.com/docs)
+- [Vite Environment Variables](https://vitejs.dev/guide/env-and-mode.html)
+- Project plan: See the "LLM-Powered Interactive Gameplay" plan document

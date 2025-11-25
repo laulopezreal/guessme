@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LLM Service Test</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #001f3f;
+      color: #ffffff;
+    }
+    button {
+      background: #ffffff;
+      color: #001f3f;
+      border: 2px solid #ffffff;
+      padding: 12px 24px;
+      font-size: 16px;
+      cursor: pointer;
+      margin: 10px 5px;
+      border-radius: 4px;
+    }
+    button:hover {
+      background: #001f3f;
+      color: #ffffff;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    #output {
+      background: #ffffff;
+      color: #001f3f;
+      padding: 20px;
+      margin-top: 20px;
+      border-radius: 4px;
+      white-space: pre-wrap;
+      min-height: 100px;
+    }
+    .loading {
+      opacity: 0.6;
+    }
+    .error {
+      background: #ff4444;
+      color: white;
+    }
+    .success {
+      background: #44ff44;
+      color: #001f3f;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧪 LLM Service Test</h1>
+  
+  <div>
+    <p>This page tests the LLM service integration. Make sure you've added your API key to <code>.env.local</code></p>
+    
+    <button id="testConfig">1. Test Configuration</button>
+    <button id="testGreeting">2. Test Initial Greeting</button>
+    <button id="testMessage">3. Test Message</button>
+    <button id="testValidation">4. Test Guess Validation</button>
+  </div>
+
+  <div id="output">Click a button to test...</div>
+
+  <script type="module">
+    import { isLLMConfigured, getInitialGreeting, sendMessage, validateGuess } from './src/services/llmService.ts';
+    import { historicFigures } from './src/data/historicFigures.ts';
+
+    const output = document.getElementById('output');
+    const buttons = document.querySelectorAll('button');
+
+    function setOutput(text, type = 'info') {
+      output.textContent = text;
+      output.className = type;
+    }
+
+    function setLoading(loading) {
+      buttons.forEach(btn => btn.disabled = loading);
+      if (loading) {
+        output.classList.add('loading');
+      } else {
+        output.classList.remove('loading');
+      }
+    }
+
+    document.getElementById('testConfig').addEventListener('click', () => {
+      const configured = isLLMConfigured();
+      if (configured) {
+        setOutput('✅ LLM is configured! API key found.', 'success');
+      } else {
+        setOutput('❌ LLM is NOT configured. Please add your API key to .env.local\n\nVITE_LLM_API_KEY=your_actual_key_here', 'error');
+      }
+    });
+
+    document.getElementById('testGreeting').addEventListener('click', async () => {
+      if (!isLLMConfigured()) {
+        setOutput('❌ Please configure API key first!', 'error');
+        return;
+      }
+
+      setLoading(true);
+      setOutput('Loading initial greeting from Einstein...', 'info');
+      
+      try {
+        const einstein = historicFigures[0]; // Albert Einstein
+        const greeting = await getInitialGreeting(einstein);
+        setOutput(`✅ Success!\n\nFigure: ${einstein.name}\nGreeting:\n"${greeting}"`, 'success');
+      } catch (error) {
+        setOutput(`❌ Error:\n${error.message}`, 'error');
+      } finally {
+        setLoading(false);
+      }
+    });
+
+    document.getElementById('testMessage').addEventListener('click', async () => {
+      if (!isLLMConfigured()) {
+        setOutput('❌ Please configure API key first!', 'error');
+        return;
+      }
+
+      setLoading(true);
+      setOutput('Sending test question to Einstein...', 'info');
+      
+      try {
+        const einstein = historicFigures[0];
+        const conversationHistory = [
+          { role: 'user', content: 'What field did you work in?' }
+        ];
+        
+        const response = await sendMessage(conversationHistory, einstein, 1);
+        setOutput(`✅ Success!\n\nQuestion: "What field did you work in?"\nResponse:\n"${response}"`, 'success');
+      } catch (error) {
+        setOutput(`❌ Error:\n${error.message}`, 'error');
+      } finally {
+        setLoading(false);
+      }
+    });
+
+    document.getElementById('testValidation').addEventListener('click', async () => {
+      if (!isLLMConfigured()) {
+        setOutput('❌ Please configure API key first!', 'error');
+        return;
+      }
+
+      setLoading(true);
+      setOutput('Testing guess validation...', 'info');
+      
+      try {
+        const einstein = historicFigures[0];
+        const conversationHistory = [
+          { role: 'user', content: 'What did you discover?' },
+          { role: 'assistant', content: 'I developed theories about the nature of space and time.' }
+        ];
+        
+        // Test correct guess
+        const result1 = await validateGuess('Einstein', einstein, conversationHistory);
+        
+        // Test incorrect guess
+        const result2 = await validateGuess('Newton', einstein, conversationHistory);
+        
+        setOutput(`✅ Success!\n\nTest 1 - Guess "Einstein":\n- Correct: ${result1.isCorrect}\n- Confidence: ${result1.confidence}\n- Feedback: "${result1.feedback}"\n\nTest 2 - Guess "Newton":\n- Correct: ${result2.isCorrect}\n- Confidence: ${result2.confidence}\n- Feedback: "${result2.feedback}"`, 'success');
+      } catch (error) {
+        setOutput(`❌ Error:\n${error.message}`, 'error');
+      } finally {
+        setLoading(false);
+      }
+    });
+  </script>
+</body>
+</html>

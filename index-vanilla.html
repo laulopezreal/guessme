@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Guess the historic figure based on clues! An engaging educational guessing game featuring famous people from history.">
+    <title>Historic Figures - Who Am I?</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+    <div class="game-container">
+        <!-- Header -->
+        <header class="game-header">
+            <h1 class="game-title">Who Am I?</h1>
+            <p class="game-subtitle">Guess the Historic Figure</p>
+            <div class="score-board">
+                <div class="score-item">
+                    <span class="score-label">Score</span>
+                    <span class="score-value" id="score">0</span>
+                </div>
+                <div class="score-item">
+                    <span class="score-label">Round</span>
+                    <span class="score-value" id="round">1</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Game Area -->
+        <main class="game-main">
+            <!-- Character Silhouette -->
+            <div class="character-container">
+                <div class="character-silhouette" id="characterSilhouette">
+                    <div class="mystery-icon">?</div>
+                </div>
+            </div>
+
+            <!-- Clues Section -->
+            <div class="clues-section">
+                <h2 class="clues-title">Clues</h2>
+                <div class="clues-container" id="cluesContainer">
+                    <!-- Clues will be dynamically inserted here -->
+                </div>
+                <button class="reveal-btn" id="revealBtn">
+                    Reveal Next Clue
+                </button>
+            </div>
+
+            <!-- Guess Section -->
+            <div class="guess-section">
+                <input type="text" id="guessInput" class="guess-input" placeholder="Type your guess here..."
+                    autocomplete="off">
+                <button class="submit-btn" id="submitBtn">
+                    <span class="btn-text">Submit Guess</span>
+                    <span class="btn-icon">→</span>
+                </button>
+            </div>
+
+            <!-- Feedback Message -->
+            <div class="feedback-message" id="feedbackMessage"></div>
+
+            <!-- Next Button (hidden initially) -->
+            <button class="next-btn hidden" id="nextBtn">
+                Next Character →
+            </button>
+        </main>
+    </div>
+
+    <!-- Modal for Game Over -->
+    <div class="modal hidden" id="gameOverModal">
+        <div class="modal-content">
+            <h2 class="modal-title">🎉 Game Complete!</h2>
+            <p class="modal-text">You've guessed all the historic figures!</p>
+            <p class="final-score">Final Score: <span id="finalScore">0</span></p>
+            <button class="modal-btn" id="restartBtn">Play Again</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
