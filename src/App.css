@@ -239,7 +239,7 @@ body {
 }
 
 .toggle-yoke:hover {
-    animation: pulse 1.5s ease infinite;
+    animation: pulse 1.5s ease;
 }
 
 @keyframes pulse {
