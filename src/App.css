@@ -74,7 +74,8 @@ body {
     color: var(--navy);
     height: 100vh;
     line-height: 1.6;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
@@ -92,12 +93,14 @@ body {
    ======================================== */
 .game-container {
     width: 100%;
-    max-width: 800px;
-    height: 100vh;
+    max-width: 1200px;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
+    gap: var(--spacing-md);
     overflow: hidden;
-    padding: 0.5rem;
+    padding: var(--spacing-lg) var(--spacing-md);
+    margin: 0 auto;
     box-sizing: border-box;
 }
 
@@ -109,8 +112,8 @@ body {
     flex-direction: column;
     flex: 1;
     min-height: 0;
-    overflow-y: auto;
-    padding-right: 0.25rem;
+    gap: var(--spacing-md);
+    padding: 0 0.25rem var(--spacing-lg);
 }
 
 .game-main::-webkit-scrollbar {
@@ -288,7 +291,7 @@ body {
 .score-board {
     display: flex;
     gap: var(--spacing-md);
-    justify-content: center;
+    justify-content: flex-end;
     align-items: center;
     flex-wrap: nowrap;
 }
@@ -394,11 +397,15 @@ body {
 
 .character-and-score {
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
     gap: var(--spacing-xl);
     flex-shrink: 0;
-    padding: var(--spacing-md) 0;
+    padding: var(--spacing-lg);
+    border: 2px solid var(--navy);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 6px 0 var(--navy);
+    background: linear-gradient(135deg, var(--white) 0%, rgba(0, 31, 63, 0.04) 100%);
 }
 
 /* ========================================
@@ -1186,6 +1193,24 @@ body {
 /* ========================================
    Responsive Design
    ======================================== */
+@media (max-width: 1100px) {
+    .game-container {
+        padding: var(--spacing-md);
+    }
+
+    .character-and-score {
+        flex-direction: column;
+        align-items: stretch;
+        gap: var(--spacing-lg);
+    }
+
+    .score-board {
+        width: 100%;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+}
+
 @media (max-width: 768px) {
     .game-title {
         font-size: var(--font-size-xl);
