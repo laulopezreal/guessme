@@ -17,8 +17,25 @@ export interface ScoreWeights {
   wrongGuessWeight: number;
 }
 
+export const classicScoreWeights: ScoreWeights = {
+  basePoints: 100,
+  minPoints: 50,
+  extraClueWeight: 10,
+  adaptiveHintWeight: 5,
+  wrongGuessWeight: 5,
+};
+
+export const llmScoreWeights: ScoreWeights = {
+  basePoints: 100,
+  minPoints: 25,
+  extraClueWeight: 10,
+  adaptiveHintWeight: 5,
+  wrongGuessWeight: 5,
+};
+
 export interface ScoreBreakdown {
   basePoints: number;
+  minPoints: number;
   cluesUsed: number;
   adaptiveHintsUsed: number;
   consecutiveMisses: number;
@@ -29,14 +46,6 @@ export interface ScoreBreakdown {
   total: number;
 }
 
-export const defaultScoreWeights: ScoreWeights = {
-  basePoints: 100,
-  minPoints: 25,
-  extraClueWeight: 10,
-  adaptiveHintWeight: 5,
-  wrongGuessWeight: 5,
-};
-
 export interface ScoringInputs {
   cluesUsed: number;
   adaptiveHintsUsed: number;
@@ -45,7 +54,7 @@ export interface ScoringInputs {
 
 export function calculatePoints(
   { cluesUsed, adaptiveHintsUsed, consecutiveMisses }: ScoringInputs,
-  weights: ScoreWeights = defaultScoreWeights
+  weights: ScoreWeights = classicScoreWeights
 ): ScoreBreakdown {
   const extraClues = Math.max(0, cluesUsed - 1);
   const cluePenalty = extraClues * weights.extraClueWeight;
@@ -57,6 +66,7 @@ export function calculatePoints(
 
   return {
     basePoints: weights.basePoints,
+    minPoints: weights.minPoints,
     cluesUsed,
     adaptiveHintsUsed,
     consecutiveMisses,

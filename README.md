@@ -16,6 +16,8 @@ A React-based guessing game where players identify historic figures through sequ
    - 3 clues = 80 points
    - 4 clues = 70 points
    - 5 clues = 60 points
+   - Every consecutive wrong guess deducts 5 points
+   - Classic rounds never drop below 50 points (AI conversations bottom out at 25)
 
 The game includes diverse historic figures from science, arts, politics, and culture.
 
@@ -113,7 +115,7 @@ Edit `src/data/historicFigures.ts` and add to the array:
 
 **Guess Validation:** Case-insensitive matching against both the canonical name and alternate name variations for flexibility.
 
-**Scoring System:** Points decrease by 10 for each additional clue revealed, with a minimum of 50 points per correct guess.
+**Scoring System:** Points decrease by 10 for each additional clue revealed. Every consecutive wrong guess deducts 5 more points, but Classic rounds never drop below 50 points (AI conversations bottom out at 25).
 
 ## 🔮 Future Plans
 

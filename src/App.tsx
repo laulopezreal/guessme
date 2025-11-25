@@ -9,7 +9,7 @@ import ConversationView from './components/ConversationView';
 import WelcomeModal from './components/WelcomeModal';
 import DocumentationModal from './components/DocumentationModal';
 import { getEnabledFigures } from './data/figuresConfig';
-import { calculatePoints, shuffleArray, selectNextClue } from './utils/gameUtils';
+import { calculatePoints, shuffleArray, selectNextClue, llmScoreWeights } from './utils/gameUtils';
 import { isLLMConfigured, getInitialGreeting, sendMessage, validateGuess } from './services/llmService';
 import type { Clue, HistoricFigure, Message } from './types';
 import './App.css';
@@ -210,11 +210,14 @@ function App() {
 
         if (result.isCorrect) {
           // Correct guess
-          const breakdown = calculatePoints({
-            cluesUsed: 1,
-            adaptiveHintsUsed: questionsAsked,
-            consecutiveMisses,
-          });
+          const breakdown = calculatePoints(
+            {
+              cluesUsed: 1,
+              adaptiveHintsUsed: questionsAsked,
+              consecutiveMisses,
+            },
+            llmScoreWeights
+          );
           setScore(prev => prev + breakdown.total);
           setLastRoundBreakdown(breakdown);
           setLastRoundNumber(round);

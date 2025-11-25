@@ -25,7 +25,7 @@ export default function Header({
   const renderBreakdown = () => {
     if (!lastRoundBreakdown) return null;
 
-    const { cluesUsed, adaptiveHintsUsed, consecutiveMisses } = lastRoundBreakdown;
+    const { cluesUsed, adaptiveHintsUsed, consecutiveMisses, minPoints } = lastRoundBreakdown;
     const breakdownItems = [
       {
         label: 'Base points',
@@ -77,7 +77,7 @@ export default function Header({
             <div className="breakdown-row" role="listitem">
               <div className="breakdown-label">
                 <span>Minimum applied</span>
-                <span className="breakdown-helper">Scores can’t drop below 25 points</span>
+                <span className="breakdown-helper">Scores can’t drop below {minPoints} points</span>
               </div>
               <span className="breakdown-value">{lastRoundBreakdown.total}</span>
             </div>
