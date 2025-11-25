@@ -1,5 +1,9 @@
 import type { HistoricFigure } from '../types';
 
+export interface HistoricFigureConfig extends HistoricFigure {
+  enabled: boolean;
+}
+
 /**
  * Figure Configuration
  *
@@ -15,7 +19,7 @@ import type { HistoricFigure } from '../types';
  * - Or remove the object entirely (hard delete)
  */
 
-export const allFigures: Array<HistoricFigure & { enabled: boolean }> = [
+export const allFigures: HistoricFigureConfig[] = [
   {
     enabled: true,
     name: "Albert Einstein",
@@ -157,3 +161,8 @@ export function getFigureCount(): { enabled: number; total: number } {
     total: allFigures.length
   };
 }
+
+/**
+ * Export the raw figure data (without `enabled`) for tooling/tests that need the full list.
+ */
+export const historicFigures: HistoricFigure[] = allFigures.map(({ enabled, ...rest }) => rest);
