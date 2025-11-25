@@ -9,7 +9,7 @@ import ConversationView from './components/ConversationView';
 import WelcomeModal from './components/WelcomeModal';
 import DocumentationModal from './components/DocumentationModal';
 import { getEnabledFigures } from './data/figuresConfig';
-import { shuffleArray, calculatePoints, selectNextClue } from './utils/gameUtils';
+import { calculatePoints, shuffleArray, selectNextClue } from './utils/gameUtils';
 import { isLLMConfigured, getInitialGreeting, sendMessage, validateGuess } from './services/llmService';
 import type { Clue, HistoricFigure, Message } from './types';
 import './App.css';
@@ -22,6 +22,8 @@ function App() {
   const [revealedClues, setRevealedClues] = useState<Array<Clue & { isAdaptive?: boolean }>>([]);
   const [consecutiveMisses, setConsecutiveMisses] = useState(0);
   const [score, setScore] = useState(0);
+  const [lastRoundBreakdown, setLastRoundBreakdown] = useState<ReturnType<typeof calculatePoints> | null>(null);
+  const [lastRoundNumber, setLastRoundNumber] = useState<number | null>(null);
   const [round, setRound] = useState(1);
   const [gameEnded, setGameEnded] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState('');
@@ -76,6 +78,8 @@ function App() {
     setRevealedClues([]);
     setConsecutiveMisses(0);
     setScore(0);
+    setLastRoundBreakdown(null);
+    setLastRoundNumber(null);
     setRound(1);
     setGameEnded(false);
     setFeedbackMessage('');
@@ -188,9 +192,17 @@ function App() {
 
         if (result.isCorrect) {
           // Correct guess
-          const points = Math.max(25, 100 - (questionsAsked * 5));
-          setScore(prev => prev + points);
-          setFeedbackMessage(`${result.feedback} You earned ${points} points!`);
+          const breakdown = calculatePoints({
+            cluesUsed: 1,
+            adaptiveHintsUsed: questionsAsked,
+            consecutiveMisses,
+          });
+          setScore(prev => prev + breakdown.total);
+          setLastRoundBreakdown(breakdown);
+          setLastRoundNumber(round);
+          setFeedbackMessage(
+            `${result.feedback} You earned ${breakdown.total} points!`
+          );
           setFeedbackType('success');
           setIsRevealed(true);
           setInputDisabled(true);
@@ -221,9 +233,17 @@ function App() {
 
     if (isCorrect) {
       // Correct guess
-      const points = calculatePoints(revealedClues.length);
-      setScore(prev => prev + points);
-      setFeedbackMessage(`Correct! It's ${currentFigure.name}! You earned ${points} points!`);
+      const breakdown = calculatePoints({
+        cluesUsed: revealedClues.length,
+        adaptiveHintsUsed: 0,
+        consecutiveMisses,
+      });
+      setScore(prev => prev + breakdown.total);
+      setLastRoundBreakdown(breakdown);
+      setLastRoundNumber(round);
+      setFeedbackMessage(
+        `Correct! It's ${currentFigure.name}! You earned ${breakdown.total} points!`
+      );
       setFeedbackType('success');
       setIsRevealed(true);
       setInputDisabled(true);
@@ -233,7 +253,16 @@ function App() {
     } else {
       handleIncorrectGuess('Not quite! Try again or reveal more clues.');
     }
-  }, [consecutiveMisses, currentFigure, llmMode, messages, questionsAsked, revealedClues.length, revealNextClue]);
+  }, [
+    consecutiveMisses,
+    currentFigure,
+    llmMode,
+    messages,
+    questionsAsked,
+    revealedClues.length,
+    revealNextClue,
+    round,
+  ]);
 
   // Next figure
   const nextFigure = useCallback(() => {
@@ -292,13 +321,15 @@ function App() {
 
   return (
     <div className="game-container">
-      <Header 
-        score={score} 
-        round={round} 
+      <Header
+        score={score}
+        round={round}
         llmMode={llmMode}
         onToggleMode={handleModeToggle}
         onShowDocs={handleShowDocs}
         disabled={inputDisabled}
+        lastRoundBreakdown={lastRoundBreakdown}
+        lastRoundNumber={lastRoundNumber}
       />
       
       <main className="game-main">

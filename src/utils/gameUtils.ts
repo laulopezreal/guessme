@@ -9,8 +9,63 @@ export function shuffleArray(array: HistoricFigure[]): HistoricFigure[] {
   return shuffled;
 }
 
-export function calculatePoints(cluesUsed: number): number {
-  return Math.max(50, 100 - (cluesUsed - 1) * 10);
+export interface ScoreWeights {
+  basePoints: number;
+  minPoints: number;
+  extraClueWeight: number;
+  adaptiveHintWeight: number;
+  wrongGuessWeight: number;
+}
+
+export interface ScoreBreakdown {
+  basePoints: number;
+  cluesUsed: number;
+  adaptiveHintsUsed: number;
+  consecutiveMisses: number;
+  cluePenalty: number;
+  hintPenalty: number;
+  wrongGuessPenalty: number;
+  rawTotal: number;
+  total: number;
+}
+
+export const defaultScoreWeights: ScoreWeights = {
+  basePoints: 100,
+  minPoints: 25,
+  extraClueWeight: 10,
+  adaptiveHintWeight: 5,
+  wrongGuessWeight: 5,
+};
+
+export interface ScoringInputs {
+  cluesUsed: number;
+  adaptiveHintsUsed: number;
+  consecutiveMisses: number;
+}
+
+export function calculatePoints(
+  { cluesUsed, adaptiveHintsUsed, consecutiveMisses }: ScoringInputs,
+  weights: ScoreWeights = defaultScoreWeights
+): ScoreBreakdown {
+  const extraClues = Math.max(0, cluesUsed - 1);
+  const cluePenalty = extraClues * weights.extraClueWeight;
+  const hintPenalty = Math.max(0, adaptiveHintsUsed) * weights.adaptiveHintWeight;
+  const wrongGuessPenalty = Math.max(0, consecutiveMisses) * weights.wrongGuessWeight;
+
+  const rawTotal = weights.basePoints - cluePenalty - hintPenalty - wrongGuessPenalty;
+  const total = Math.max(weights.minPoints, rawTotal);
+
+  return {
+    basePoints: weights.basePoints,
+    cluesUsed,
+    adaptiveHintsUsed,
+    consecutiveMisses,
+    cluePenalty,
+    hintPenalty,
+    wrongGuessPenalty,
+    rawTotal,
+    total,
+  };
 }
 
 const difficultyRank: Record<Clue['difficulty'], number> = {
