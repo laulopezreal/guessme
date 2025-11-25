@@ -368,8 +368,21 @@ function App() {
         lastRoundNumber={lastRoundNumber}
       />
       
-      <main className="game-main">
+      <div className="character-and-score">
         <CharacterSilhouette revealed={isRevealed} eraTags={currentFigure.eraTags} />
+        <div className="score-board">
+          <div className="score-item">
+            <span className="score-label">Round</span>
+            <span className="score-value">{round}</span>
+          </div>
+          <div className="score-item">
+            <span className="score-label">Score</span>
+            <span className="score-value">{score}</span>
+          </div>
+        </div>
+      </div>
+      
+      <main className="game-main">
         
         {llmMode ? (
           <ConversationView 

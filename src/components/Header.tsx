@@ -114,17 +114,6 @@ export default function Header({
           </div>
         </div>
       </div>
-      <div className="score-board">
-        <div className="score-item">
-          <span className="score-label">Round</span>
-          <span className="score-value">{round}</span>
-        </div>
-        <div className="score-item">
-          <span className="score-label">Score</span>
-          <span className="score-value">{score}</span>
-        </div>
-        {renderBreakdown()}
-      </div>
     </header>
   );
 }

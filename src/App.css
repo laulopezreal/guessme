@@ -297,12 +297,12 @@ body {
     background: var(--white);
     border: 2px solid var(--navy);
     border-radius: var(--radius-md);
-    padding: var(--spacing-sm) var(--spacing-md);
+    padding: var(--spacing-xs) var(--spacing-sm);
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 0.25rem;
-    min-width: 120px;
+    min-width: 90px;
     transition: transform var(--transition), box-shadow var(--transition);
 }
 
@@ -321,7 +321,7 @@ body {
 }
 
 .score-value {
-    font-size: var(--font-size-xl);
+    font-size: var(--font-size-lg);
     font-weight: 700;
     color: var(--navy);
 }
@@ -381,20 +381,38 @@ body {
 }
 
 /* ========================================
+   Character and Score Row
+   ======================================== */
+.game-header {
+    margin-bottom: var(--spacing-md);
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.character-and-score {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: var(--spacing-lg);
+    flex-shrink: 0;
+}
+
+/* ========================================
    Character Silhouette
    ======================================== */
 .character-container {
     display: flex;
     justify-content: center;
-    margin-bottom: var(--spacing-md);
     align-items: center;
     flex-direction: column;
     flex-shrink: 0;
 }
 
 .character-silhouette {
-    width: 120px;
-    height: 120px;
+    width: 100px;
+    height: 100px;
     background: var(--white);
     border: 3px solid var(--navy);
     border-radius: 50%;
@@ -409,7 +427,7 @@ body {
 }
 
 .mystery-icon {
-    font-size: 3rem;
+    font-size: 2.5rem;
     color: var(--navy);
     font-weight: 300;
 }
@@ -420,7 +438,7 @@ body {
 
 .character-silhouette.revealed::after {
     content: '✓';
-    font-size: 3rem;
+    font-size: 2.5rem;
     color: var(--navy);
 }
 
