@@ -167,6 +167,19 @@ function App() {
   const handleGuess = useCallback(async (guess: string) => {
     if (!currentFigure) return;
 
+    // Helper function for handling incorrect guesses
+    const handleIncorrectGuess = (feedbackMsg: string) => {
+      setFeedbackMessage(feedbackMsg);
+      setFeedbackType('error');
+      const misses = consecutiveMisses + 1;
+      setConsecutiveMisses(misses);
+      if (misses >= MISS_THRESHOLD) {
+        revealNextClue(misses);
+      }
+      setTriggerShake(true);
+      setTimeout(() => setTriggerShake(false), 500);
+    };
+
     // LLM mode: use AI validation
     if (llmMode) {
       setIsTyping(true);
@@ -185,16 +198,7 @@ function App() {
           setConsecutiveMisses(0);
           setAdaptiveHintNotice('');
         } else {
-          // Incorrect guess
-          setFeedbackMessage(result.feedback);
-          setFeedbackType('error');
-          const misses = consecutiveMisses + 1;
-          setConsecutiveMisses(misses);
-          if (misses >= MISS_THRESHOLD) {
-            revealNextClue(misses);
-          }
-          setTriggerShake(true);
-          setTimeout(() => setTriggerShake(false), 500);
+          handleIncorrectGuess(result.feedback);
         }
       } catch (error) {
         console.error('Validation error:', error);
@@ -227,16 +231,7 @@ function App() {
       setConsecutiveMisses(0);
       setAdaptiveHintNotice('');
     } else {
-      // Incorrect guess
-      setFeedbackMessage('Not quite! Try again or reveal more clues.');
-      setFeedbackType('error');
-      const misses = consecutiveMisses + 1;
-      setConsecutiveMisses(misses);
-      if (misses >= MISS_THRESHOLD) {
-        revealNextClue(misses);
-      }
-      setTriggerShake(true);
-      setTimeout(() => setTriggerShake(false), 500);
+      handleIncorrectGuess('Not quite! Try again or reveal more clues.');
     }
   }, [consecutiveMisses, currentFigure, llmMode, messages, questionsAsked, revealedClues.length, revealNextClue]);
 
