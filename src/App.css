@@ -97,7 +97,7 @@ body {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    padding: var(--spacing-sm);
+    padding: 0.5rem;
     box-sizing: border-box;
 }
 
@@ -130,7 +130,7 @@ body {
    Header
    ======================================== */
 .game-header {
-    margin-bottom: var(--spacing-lg);
+    margin-bottom: var(--spacing-sm);
     flex-shrink: 0;
 }
 
@@ -138,8 +138,8 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: var(--spacing-md);
-    padding-bottom: var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
+    padding-bottom: var(--spacing-sm);
     border-bottom: 2px solid var(--navy);
 }
 
@@ -290,20 +290,21 @@ body {
     gap: var(--spacing-md);
     justify-content: center;
     align-items: center;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
 }
 
 .score-item {
     background: var(--white);
     border: 2px solid var(--navy);
     border-radius: var(--radius-md);
-    padding: var(--spacing-xs) var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.25rem;
-    min-width: 90px;
+    gap: 0.35rem;
+    min-width: 100px;
     transition: transform var(--transition), box-shadow var(--transition);
+    flex-shrink: 0;
 }
 
 .score-item:hover {
@@ -395,8 +396,9 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: var(--spacing-lg);
+    gap: var(--spacing-xl);
     flex-shrink: 0;
+    padding: var(--spacing-md) 0;
 }
 
 /* ========================================
@@ -411,8 +413,8 @@ body {
 }
 
 .character-silhouette {
-    width: 100px;
-    height: 100px;
+    width: 110px;
+    height: 110px;
     background: var(--white);
     border: 3px solid var(--navy);
     border-radius: 50%;
@@ -420,6 +422,7 @@ body {
     align-items: center;
     justify-content: center;
     transition: all 0.3s ease;
+    flex-shrink: 0;
 }
 
 .character-silhouette:hover {
@@ -427,7 +430,7 @@ body {
 }
 
 .mystery-icon {
-    font-size: 2.5rem;
+    font-size: 2.8rem;
     color: var(--navy);
     font-weight: 300;
 }
@@ -438,7 +441,7 @@ body {
 
 .character-silhouette.revealed::after {
     content: '✓';
-    font-size: 2.5rem;
+    font-size: 2.8rem;
     color: var(--navy);
 }
 
@@ -468,7 +471,7 @@ body {
     border: 2px solid var(--navy);
     border-radius: var(--radius-lg);
     padding: var(--spacing-md);
-    margin-bottom: var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
     box-shadow: 0 2px 8px rgba(0, 31, 63, 0.1);
     transition: all var(--transition);
 }
@@ -667,7 +670,7 @@ body {
 .guess-section {
     display: flex;
     gap: var(--spacing-md);
-    margin-bottom: var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
     flex-wrap: wrap;
     flex-shrink: 0;
 }
@@ -678,9 +681,9 @@ body {
     background: var(--white);
     border: 2px solid var(--navy);
     border-radius: var(--radius-md);
-    padding: var(--spacing-sm) var(--spacing-md);
+    padding: var(--spacing-xs) var(--spacing-sm);
     font-family: var(--font-family);
-    font-size: var(--font-size-md);
+    font-size: var(--font-size-sm);
     color: var(--navy);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -704,7 +707,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-sm);
-    margin-top: var(--spacing-md);
+    margin-top: var(--spacing-sm);
     flex-shrink: 0;
 }
 
@@ -957,8 +960,8 @@ body {
     margin-bottom: var(--spacing-md);
     display: flex;
     flex-direction: column;
-    min-height: 200px;
-    max-height: 400px;
+    min-height: 240px;
+    max-height: 350px;
     box-shadow: 0 2px 8px rgba(0, 31, 63, 0.1);
     transition: all var(--transition);
 }
