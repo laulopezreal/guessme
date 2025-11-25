@@ -382,6 +382,47 @@ body {
     transition: all var(--transition);
 }
 
+.clue-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-xs);
+}
+
+.clue-difficulty {
+    border: 1px solid var(--navy);
+    border-radius: var(--radius-sm);
+    padding: 0 var(--spacing-xs);
+    font-size: var(--font-size-xs);
+    text-transform: capitalize;
+}
+
+.clue-difficulty.easy {
+    background: rgba(0, 31, 63, 0.05);
+}
+
+.clue-difficulty.medium {
+    background: rgba(0, 31, 63, 0.1);
+}
+
+.clue-difficulty.hard {
+    background: rgba(0, 31, 63, 0.15);
+}
+
+.clue-adaptive-badge {
+    border-radius: var(--radius-sm);
+    border: 1px dashed var(--navy);
+    padding: 0 var(--spacing-xs);
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.adaptive-clue {
+    border-width: 2px;
+    box-shadow: 0 0 0 2px rgba(0, 31, 63, 0.1);
+}
+
 .clue-item:hover {
     background: var(--navy);
     color: var(--white);
@@ -541,12 +582,18 @@ body {
 /* ========================================
    Feedback Message
    ======================================== */
+.feedback-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-md);
+}
+
 .feedback-message {
     text-align: center;
     padding: var(--spacing-md);
     border-radius: var(--radius-md);
     font-weight: 600;
-    margin-top: var(--spacing-md);
     min-height: 50px;
     display: flex;
     align-items: center;
@@ -563,6 +610,16 @@ body {
     background: var(--white);
     border: 2px solid var(--navy);
     color: var(--navy);
+}
+
+.feedback-message.info {
+    background: var(--white);
+    border: 2px dashed var(--navy);
+    color: var(--navy);
+}
+
+.adaptive-banner {
+    font-size: var(--font-size-sm);
 }
 
 /* ========================================

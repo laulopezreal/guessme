@@ -5,10 +5,15 @@ export interface Message {
   timestamp: number;
 }
 
+export interface Clue {
+  text: string;
+  difficulty: 'hard' | 'medium' | 'easy';
+}
+
 export interface HistoricFigure {
   name: string;
   alternateNames: string[];
-  clues: string[];
+  clues: Clue[];
 }
 
 export interface GameState {

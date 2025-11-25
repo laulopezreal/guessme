@@ -42,7 +42,7 @@ HINT PROGRESSION (current level: ${hintLevel}/5):
 - Level 4-5: Very specific hints that make your identity clearer
 
 ABOUT YOU:
-${figure.clues.join('\n')}
+${figure.clues.map(clue => clue.text).join('\n')}
 
 Respond naturally to questions, maintaining your character while helping the player guess who you are.`;
 
@@ -94,7 +94,7 @@ export async function sendMessage(
  */
 export async function getInitialGreeting(figure: HistoricFigure): Promise<string> {
   // Build a personality-rich prompt using the clues
-  const context = figure.clues.join(' ');
+  const context = figure.clues.map(clue => clue.text).join(' ');
   const systemPrompt = `You are ${figure.name}. Based on this context about you: "${context}"
 
 Greet the player with a mysterious, character-appropriate welcome.
