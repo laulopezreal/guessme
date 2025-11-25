@@ -100,9 +100,12 @@ export default function GuessInput({
     if (llmMode && isQuestionMode) {
       // Autodetect guesses while the UI is in "Ask Question" mode.
       if (isLikelyGuess(value)) {
-        onSubmitGuess(value);
-        setIsQuestionMode(false); // reflect that we're now effectively in guess mode
-        setInput('');
+        onValidationError?.(
+          'This looks like a guess. To submit it as your answer (which will affect your score), switch to "Submit Guess" mode and send it again.'
+        );
+        // Keep the input so the user can resend it, but highlight that they
+        // should explicitly switch modes before it counts as a guess.
+        setIsQuestionMode(false);
         return;
       }
 
