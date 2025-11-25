@@ -108,10 +108,10 @@ export default function GuessInput({
       const lower = value.toLowerCase();
       const greetings = ['hello', 'welcome', 'hi', 'hey', 'greetings', 'thanks', 'thank you', 'please'];
       
-      // Check if it's a greeting and show a playful message
+      // Check if it's a greeting and show a period-appropriate message
       if (greetings.some(greeting => lower === greeting || lower.startsWith(greeting + ' '))) {
         onValidationError?.(
-          '👋 Nice to meet you! But we\'re here to play, not chat. Ask a smart question or make your guess to win! 😎'
+          'Indeed, we meet. But we haven\'t time for pleasantries. Ask me something worth answering, or make your guess.'
         );
         return;
       }
