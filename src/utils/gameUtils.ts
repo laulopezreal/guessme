@@ -52,14 +52,30 @@ export interface ScoringInputs {
   consecutiveMisses: number;
 }
 
-export function calculatePoints(
-  { cluesUsed, adaptiveHintsUsed, consecutiveMisses }: ScoringInputs,
-  weights: ScoreWeights = classicScoreWeights
-): ScoreBreakdown {
+function calculatePenalties(
+  cluesUsed: number,
+  adaptiveHintsUsed: number,
+  consecutiveMisses: number,
+  weights: ScoreWeights
+) {
   const extraClues = Math.max(0, cluesUsed - 1);
   const cluePenalty = extraClues * weights.extraClueWeight;
   const hintPenalty = Math.max(0, adaptiveHintsUsed) * weights.adaptiveHintWeight;
   const wrongGuessPenalty = Math.max(0, consecutiveMisses) * weights.wrongGuessWeight;
+
+  return { cluePenalty, hintPenalty, wrongGuessPenalty };
+}
+
+export function calculatePoints(
+  { cluesUsed, adaptiveHintsUsed, consecutiveMisses }: ScoringInputs,
+  weights: ScoreWeights = classicScoreWeights
+): ScoreBreakdown {
+  const { cluePenalty, hintPenalty, wrongGuessPenalty } = calculatePenalties(
+    cluesUsed,
+    adaptiveHintsUsed,
+    consecutiveMisses,
+    weights
+  );
 
   const rawTotal = weights.basePoints - cluePenalty - hintPenalty - wrongGuessPenalty;
   const total = Math.max(weights.minPoints, rawTotal);
