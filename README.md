@@ -1,3 +1,5 @@
+[![Netlify Status](https://api.netlify.com/api/v1/badges/cadeac1f-f7b5-4ed5-b2f3-d16228ca6317/deploy-status)](https://app.netlify.com/projects/guessmeyou/deploys)
+
 # Who Am I? 🎭
 
 A React-based guessing game where players identify historic figures through sequential clues. Features a clean, minimalist design with a strict navy-and-white color scheme.
