@@ -15,6 +15,8 @@ import type { Clue, HistoricFigure, Message } from './types';
 import './App.css';
 
 const MISS_THRESHOLD = 2;
+const QUESTION_LIMIT = 15;
+const WARNING_THRESHOLD = 3;
 
 function App() {
   const [shuffledFigures, setShuffledFigures] = useState<HistoricFigure[]>([]);
@@ -41,6 +43,7 @@ function App() {
   const [isTyping, setIsTyping] = useState(false);
   const [showWelcome, setShowWelcome] = useState(true);
   const [showDocs, setShowDocs] = useState(false);
+  const [outOfQuestions, setOutOfQuestions] = useState(false);
 
   // Current figure
   const currentFigure = shuffledFigures[currentFigureIndex];
@@ -90,6 +93,7 @@ function App() {
     setMessages([]);
     setQuestionsAsked(0);
     setAdaptiveHintNotice('');
+    setOutOfQuestions(false);
   }, []);
 
   // Initialize on mount
@@ -132,6 +136,13 @@ function App() {
   const handleAskQuestion = useCallback(async (question: string) => {
     if (!currentFigure || !llmMode) return;
 
+    if (questionsAsked >= QUESTION_LIMIT) {
+      setFeedbackMessage("You're out of questions for this round. Start a new conversation or submit your best guess!");
+      setFeedbackType('error');
+      setOutOfQuestions(true);
+      return;
+    }
+
     const userMessage: Message = {
       id: `msg-${Date.now()}`,
       role: 'user',
@@ -139,12 +150,17 @@ function App() {
       timestamp: Date.now(),
     };
 
+    const nextQuestionCount = questionsAsked + 1;
+
     setMessages(prev => [...prev, userMessage]);
-    setQuestionsAsked(prev => prev + 1);
+    setQuestionsAsked(nextQuestionCount);
+    if (nextQuestionCount >= QUESTION_LIMIT) {
+      setOutOfQuestions(true);
+    }
     setIsTyping(true);
 
     // Update hint level based on questions asked
-    const newHintLevel = Math.min(5, Math.floor(questionsAsked / 2) + 1);
+    const newHintLevel = Math.min(5, Math.floor(nextQuestionCount / 2) + 1);
 
     try {
       const conversationHistory = [...messages, userMessage].filter(m => m.role !== 'system');
@@ -250,6 +266,7 @@ function App() {
       setShowNextButton(true);
       setConsecutiveMisses(0);
       setAdaptiveHintNotice('');
+      setOutOfQuestions(false);
     } else {
       handleIncorrectGuess('Not quite! Try again or reveal more clues.');
     }
@@ -283,6 +300,7 @@ function App() {
       setRevealedClues([]);
       setConsecutiveMisses(0);
       setAdaptiveHintNotice('');
+      setOutOfQuestions(false);
     }
   }, [currentFigureIndex, shuffledFigures.length]);
 
@@ -315,6 +333,16 @@ function App() {
     setShowDocs(false);
   }, []);
 
+  const resetConversation = useCallback(() => {
+    if (!currentFigure || !llmMode) return;
+    setMessages([]);
+    setQuestionsAsked(0);
+    setFeedbackMessage('');
+    setFeedbackType('');
+    setOutOfQuestions(false);
+    initializeConversation(currentFigure);
+  }, [currentFigure, initializeConversation, llmMode]);
+
   if (!currentFigure) {
     return <div>Loading...</div>;
   }
@@ -339,6 +367,10 @@ function App() {
           <ConversationView 
             messages={messages} 
             isTyping={isTyping}
+            remainingQuestions={Math.max(0, QUESTION_LIMIT - questionsAsked)}
+            questionLimit={QUESTION_LIMIT}
+            warningThreshold={WARNING_THRESHOLD}
+            onResetConversation={resetConversation}
           />
         ) : (
           <CluesList
@@ -355,6 +387,11 @@ function App() {
           disabled={inputDisabled || isTyping}
           triggerShake={triggerShake}
           llmMode={llmMode}
+          onValidationError={(message) => {
+            setFeedbackMessage(message);
+            setFeedbackType('error');
+          }}
+          questionLimitReached={llmMode ? outOfQuestions : false}
         />
 
         <FeedbackMessage

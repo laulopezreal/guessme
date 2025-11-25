@@ -24,6 +24,8 @@ export default function WelcomeModal({ isVisible, onStart, llmMode }: WelcomeMod
                 <li>A historic figure will greet you mysteriously</li>
                 <li>Ask questions to learn more about them</li>
                 <li>The figure responds in character with hints</li>
+                <li>You can ask up to 15 questions per conversation</li>
+                <li>Start a new chat if you run out of questions</li>
                 <li>When you think you know, switch to "Submit Guess" mode</li>
                 <li>Fewer questions = more points!</li>
               </ul>

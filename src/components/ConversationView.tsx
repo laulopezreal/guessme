@@ -4,9 +4,20 @@ import type { Message } from '../types';
 interface ConversationViewProps {
   messages: Message[];
   isTyping: boolean;
+  remainingQuestions: number;
+  questionLimit: number;
+  warningThreshold: number;
+  onResetConversation: () => void;
 }
 
-export default function ConversationView({ messages, isTyping }: ConversationViewProps) {
+export default function ConversationView({
+  messages,
+  isTyping,
+  remainingQuestions,
+  questionLimit,
+  warningThreshold,
+  onResetConversation,
+}: ConversationViewProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom when new messages arrive
@@ -16,10 +27,34 @@ export default function ConversationView({ messages, isTyping }: ConversationVie
 
   // Filter out system messages (only show user and assistant)
   const visibleMessages = messages.filter(msg => msg.role !== 'system');
+  const nearLimit = remainingQuestions <= warningThreshold;
+  const outOfQuestions = remainingQuestions <= 0;
 
   return (
     <div className="conversation-section">
-      <h2 className="conversation-title">Conversation</h2>
+      <div className="conversation-header">
+        <h2 className="conversation-title">Conversation</h2>
+        <div className="question-meter">
+          <span className="question-count">
+            Questions left: {remainingQuestions} / {questionLimit}
+          </span>
+          <button
+            className="reset-btn"
+            onClick={onResetConversation}
+          >
+            New Conversation
+          </button>
+        </div>
+      </div>
+
+      {nearLimit && (
+        <div className={`inline-warning ${outOfQuestions ? 'warning-critical' : ''}`}>
+          {outOfQuestions
+            ? 'You have no questions left. Start a new conversation or make your guess!'
+            : `You are nearing the question limit. ${remainingQuestions} question${remainingQuestions === 1 ? '' : 's'} remaining.`}
+        </div>
+      )}
+
       <div className="messages-container">
         {visibleMessages.length === 0 ? (
           <div className="empty-state">

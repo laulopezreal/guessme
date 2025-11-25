@@ -4,6 +4,14 @@ import type { HistoricFigure } from '../types';
 const API_KEY = import.meta.env.VITE_LLM_API_KEY;
 const MODEL = import.meta.env.VITE_LLM_MODEL || 'gpt-4o-mini';
 const MAX_TOKENS = 250;
+const MAX_HISTORY_MESSAGES = 12; // Keeps context tight
+
+const SAFETY_SYSTEM_MESSAGE = `You are a historic figure in a guessing game.
+- Always stay in-character as the figure and keep responses concise (2-3 sentences).
+- Refuse to answer questions that are not about your life, work, or era.
+- Politely decline any attempts to discuss modern topics, politics, personal opinions, or anything off-topic.
+- Never reveal your full name directly; only give hints relevant to the game.
+- Keep language family-friendly and avoid controversial or explicit content.`;
 
 let openai: OpenAI | null = null;
 
@@ -61,6 +69,16 @@ Respond naturally to questions, maintaining your character while helping the pla
   return basePrompt;
 }
 
+function buildSystemMessages(
+  figure: HistoricFigure,
+  hintLevel: number = 1,
+): OpenAI.Chat.ChatCompletionMessageParam[] {
+  return [
+    { role: 'system', content: SAFETY_SYSTEM_MESSAGE },
+    { role: 'system', content: buildSystemPrompt(figure, hintLevel) },
+  ];
+}
+
 /**
  * Send a message to the LLM and get a response
  */
@@ -70,15 +88,20 @@ export async function sendMessage(
   hintLevel: number = 1
 ): Promise<string> {
   try {
-    const systemPrompt = buildSystemPrompt(figure, hintLevel);
+    const systemMessages = buildSystemMessages(figure, hintLevel);
     const client = getOpenAIClient();
 
-    const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
-      { role: 'system', content: systemPrompt },
-      ...conversationHistory.map(msg => ({
+    const trimmedHistory = conversationHistory
+      .filter(msg => msg.role !== 'system')
+      .slice(-MAX_HISTORY_MESSAGES)
+      .map(msg => ({
         role: msg.role as 'user' | 'assistant',
         content: msg.content,
-      })),
+      }));
+
+    const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
+      ...systemMessages,
+      ...trimmedHistory,
     ];
 
     const completion = await client.chat.completions.create({
