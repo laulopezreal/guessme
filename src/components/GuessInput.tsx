@@ -40,6 +40,12 @@ export default function GuessInput({
 
     const lower = trimmed.toLowerCase();
 
+    // Common greetings/polite phrases that should not be treated as guesses.
+    const greetings = ['hello', 'welcome', 'hi', 'hey', 'greetings', 'thanks', 'thank you', 'please'];
+    if (greetings.some(greeting => lower === greeting || lower.startsWith(greeting + ' '))) {
+      return false;
+    }
+
     // Common guess-intent phrases.
     const guessPhrases = [
       "i think it's",
@@ -132,7 +138,7 @@ export default function GuessInput({
     setInput('');
   };
 
-  const handleKeyPress = (e: KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       handleSubmit();
     }
@@ -169,7 +175,7 @@ export default function GuessInput({
         }
         value={input}
         onChange={(e) => setInput(e.target.value)}
-        onKeyPress={handleKeyPress}
+        onKeyDown={handleKeyDown}
         disabled={disabled || (llmMode && isQuestionMode && questionLimitReached)}
         autoComplete="off"
         style={triggerShake ? { animation: 'shake 0.5s' } : {}}
