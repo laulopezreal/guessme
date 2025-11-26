@@ -74,7 +74,8 @@ body {
     color: var(--navy);
     height: 100vh;
     line-height: 1.6;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
@@ -83,9 +84,8 @@ body {
     width: 100%;
     height: 100%;
     display: flex;
-    align-items: center;
+    align-items: stretch;
     justify-content: center;
-    padding: var(--spacing-sm);
 }
 
 /* ========================================
@@ -93,19 +93,47 @@ body {
    ======================================== */
 .game-container {
     width: 100%;
-    max-width: 800px;
-    height: 100%;
-    max-height: 100vh;
-    overflow-y: auto;
+    max-width: 1200px;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
+    gap: var(--spacing-md);
+    overflow: hidden;
+    padding: var(--spacing-lg) var(--spacing-md);
+    margin: 0 auto;
+    box-sizing: border-box;
+}
+
+/* ========================================
+   Game Main Content
+   ======================================== */
+.game-main {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    gap: var(--spacing-md);
+    padding: 0 0.25rem var(--spacing-lg);
+}
+
+.game-main::-webkit-scrollbar {
+    width: 6px;
+}
+
+.game-main::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.game-main::-webkit-scrollbar-thumb {
+    background: var(--navy);
+    border-radius: 3px;
 }
 
 /* ========================================
    Header
    ======================================== */
 .game-header {
-    margin-bottom: var(--spacing-lg);
+    margin-bottom: var(--spacing-sm);
     flex-shrink: 0;
 }
 
@@ -113,8 +141,8 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: var(--spacing-md);
-    padding-bottom: var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
+    padding-bottom: var(--spacing-sm);
     border-bottom: 2px solid var(--navy);
 }
 
@@ -263,9 +291,9 @@ body {
 .score-board {
     display: flex;
     gap: var(--spacing-md);
-    justify-content: center;
+    justify-content: flex-end;
     align-items: center;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
 }
 
 .score-item {
@@ -276,9 +304,10 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.25rem;
-    min-width: 120px;
+    gap: 0.35rem;
+    min-width: 100px;
     transition: transform var(--transition), box-shadow var(--transition);
+    flex-shrink: 0;
 }
 
 .score-item:hover {
@@ -296,7 +325,7 @@ body {
 }
 
 .score-value {
-    font-size: var(--font-size-xl);
+    font-size: var(--font-size-lg);
     font-weight: 700;
     color: var(--navy);
 }
@@ -356,19 +385,43 @@ body {
 }
 
 /* ========================================
+   Character and Score Row
+   ======================================== */
+.game-header {
+    margin-bottom: var(--spacing-md);
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.character-and-score {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--spacing-xl);
+    flex-shrink: 0;
+    padding: var(--spacing-lg);
+    border: 2px solid var(--navy);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 6px 0 var(--navy);
+    background: linear-gradient(135deg, var(--white) 0%, rgba(0, 31, 63, 0.04) 100%);
+}
+
+/* ========================================
    Character Silhouette
    ======================================== */
 .character-container {
     display: flex;
     justify-content: center;
-    margin-bottom: var(--spacing-md);
     align-items: center;
     flex-direction: column;
+    flex-shrink: 0;
 }
 
 .character-silhouette {
-    width: 120px;
-    height: 120px;
+    width: 110px;
+    height: 110px;
     background: var(--white);
     border: 3px solid var(--navy);
     border-radius: 50%;
@@ -376,6 +429,7 @@ body {
     align-items: center;
     justify-content: center;
     transition: all 0.3s ease;
+    flex-shrink: 0;
 }
 
 .character-silhouette:hover {
@@ -383,7 +437,7 @@ body {
 }
 
 .mystery-icon {
-    font-size: 3rem;
+    font-size: 2.8rem;
     color: var(--navy);
     font-weight: 300;
 }
@@ -394,7 +448,7 @@ body {
 
 .character-silhouette.revealed::after {
     content: '✓';
-    font-size: 3rem;
+    font-size: 2.8rem;
     color: var(--navy);
 }
 
@@ -424,7 +478,7 @@ body {
     border: 2px solid var(--navy);
     border-radius: var(--radius-lg);
     padding: var(--spacing-md);
-    margin-bottom: var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
     box-shadow: 0 2px 8px rgba(0, 31, 63, 0.1);
     transition: all var(--transition);
 }
@@ -438,10 +492,11 @@ body {
     margin-bottom: var(--spacing-sm);
     color: var(--navy);
     font-weight: 600;
+    flex-shrink: 0;
 }
 
 .clues-container {
-    min-height: 120px;
+    min-height: 80px;
     margin-bottom: var(--spacing-sm);
 }
 
@@ -622,8 +677,9 @@ body {
 .guess-section {
     display: flex;
     gap: var(--spacing-md);
-    margin-bottom: var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
     flex-wrap: wrap;
+    flex-shrink: 0;
 }
 
 .guess-input {
@@ -632,9 +688,9 @@ body {
     background: var(--white);
     border: 2px solid var(--navy);
     border-radius: var(--radius-md);
-    padding: var(--spacing-sm) var(--spacing-md);
+    padding: var(--spacing-xs) var(--spacing-sm);
     font-family: var(--font-family);
-    font-size: var(--font-size-md);
+    font-size: var(--font-size-sm);
     color: var(--navy);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -658,7 +714,8 @@ body {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-sm);
-    margin-top: var(--spacing-md);
+    margin-top: var(--spacing-sm);
+    flex-shrink: 0;
 }
 
 .feedback-message {
@@ -715,6 +772,8 @@ body {
     justify-content: center;
     z-index: 1000;
     animation: fadeIn 0.3s ease;
+    padding: var(--spacing-sm);
+    overflow-y: auto;
 }
 
 @keyframes fadeIn {
@@ -730,11 +789,14 @@ body {
     background: var(--white);
     border: 3px solid var(--navy);
     border-radius: var(--radius-lg);
-    padding: var(--spacing-xl);
+    padding: var(--spacing-lg);
     max-width: 500px;
+    width: 100%;
     text-align: center;
     animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 8px 24px rgba(0, 31, 63, 0.3);
+    max-height: 90vh;
+    overflow-y: auto;
 }
 
 @keyframes slideUp {
@@ -749,8 +811,8 @@ body {
 }
 
 .modal-title {
-    font-size: var(--font-size-xl);
-    margin-bottom: var(--spacing-md);
+    font-size: var(--font-size-lg);
+    margin-bottom: var(--spacing-sm);
     color: var(--navy);
     font-weight: 700;
 }
@@ -777,18 +839,18 @@ body {
 
 /* Welcome Modal */
 .welcome-modal {
-    max-width: 600px;
+    max-width: 450px;
     text-align: left;
 }
 
 .welcome-content {
-    margin: var(--spacing-lg) 0;
+    margin: var(--spacing-md) 0;
 }
 
 .welcome-intro {
-    font-size: var(--font-size-md);
+    font-size: var(--font-size-sm);
     text-align: center;
-    margin-bottom: var(--spacing-lg);
+    margin-bottom: var(--spacing-md);
     color: var(--navy);
 }
 
@@ -796,47 +858,51 @@ body {
     background: var(--white);
     border: 2px solid var(--navy);
     border-radius: var(--radius-md);
-    padding: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md);
     margin-bottom: var(--spacing-md);
 }
 
 .mode-explanation h3 {
     color: var(--navy);
-    font-size: var(--font-size-lg);
-    margin-bottom: var(--spacing-sm);
+    font-size: var(--font-size-md);
+    margin-bottom: var(--spacing-xs);
 }
 
 .game-rules {
     list-style-position: inside;
     color: var(--navy);
+    font-size: var(--font-size-sm);
 }
 
 .game-rules li {
-    margin-bottom: var(--spacing-xs);
-    line-height: 1.6;
+    margin-bottom: 0.25rem;
+    line-height: 1.4;
 }
 
 .scoring-info {
     background: var(--navy);
     color: var(--white);
     border-radius: var(--radius-md);
-    padding: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md);
     text-align: center;
+    font-size: var(--font-size-sm);
 }
 
 .scoring-info h3 {
     color: var(--white);
-    margin-bottom: var(--spacing-sm);
+    margin-bottom: var(--spacing-xs);
+    font-size: var(--font-size-md);
 }
 
 .scoring-info p {
-    margin: var(--spacing-xs) 0;
+    margin: 0.25rem 0;
 }
 
 .start-btn {
     width: 100%;
-    font-size: var(--font-size-md);
-    padding: var(--spacing-md);
+    font-size: var(--font-size-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    margin-top: var(--spacing-md);
 }
 
 /* Documentation Modal */
@@ -901,7 +967,8 @@ body {
     margin-bottom: var(--spacing-md);
     display: flex;
     flex-direction: column;
-    max-height: 400px;
+    min-height: 240px;
+    max-height: 350px;
     box-shadow: 0 2px 8px rgba(0, 31, 63, 0.1);
     transition: all var(--transition);
 }
@@ -915,6 +982,7 @@ body {
     justify-content: space-between;
     align-items: center;
     gap: var(--spacing-sm);
+    flex-shrink: 0;
 }
 
 .conversation-title {
@@ -980,6 +1048,7 @@ body {
     flex-direction: column;
     gap: var(--spacing-sm);
     padding: var(--spacing-xs);
+    min-height: 0;
 }
 
 .empty-state {
@@ -1124,6 +1193,24 @@ body {
 /* ========================================
    Responsive Design
    ======================================== */
+@media (max-width: 1100px) {
+    .game-container {
+        padding: var(--spacing-md);
+    }
+
+    .character-and-score {
+        flex-direction: column;
+        align-items: stretch;
+        gap: var(--spacing-lg);
+    }
+
+    .score-board {
+        width: 100%;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+}
+
 @media (max-width: 768px) {
     .game-title {
         font-size: var(--font-size-xl);
