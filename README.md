@@ -2,9 +2,13 @@
 
 # Who Am I? 🎭
 
-A React-based guessing game where players identify historic figures through sequential clues. Features a clean, minimalist design with a strict navy-and-white color scheme.
+A React-based guessing game where players identify historic figures either through sequential clues (Classic Mode) or an in-character conversation with an AI-powered historic figure (AI Mode). The UI keeps a clean, minimalist design with a strict navy-and-white color scheme.
 
 ## 🎮 How to Play
+
+The game has two modes you can switch between at any time:
+
+### Classic Mode (Clues)
 
 1. A silhouette of a historic figure appears
 2. Read the first clue (automatically revealed)
@@ -17,7 +21,19 @@ A React-based guessing game where players identify historic figures through sequ
    - 4 clues = 70 points
    - 5 clues = 60 points
    - Every consecutive wrong guess deducts 5 points
-   - Classic rounds never drop below 50 points (AI conversations bottom out at 25)
+   - Classic rounds never drop below 50 points
+
+### AI Mode (Conversation)
+
+1. A historic figure greets you mysteriously in character
+2. Ask free-form questions to learn about their life, era, and work
+3. The figure responds in character, giving progressively more specific hints
+4. You can ask up to 15 questions per conversation before starting a new chat
+5. When you think you know who it is, type your guess and submit it
+6. Scoring is based on how many questions you asked and how many consecutive misses you had:
+   - Each question or adaptive hint: -5 points
+   - Each consecutive wrong guess: -5 points
+   - AI conversations never drop below 25 points
 
 The game includes diverse historic figures from science, arts, politics, and culture.
 
@@ -46,22 +62,31 @@ npm run dev
 ```
 guessme/
 ├── src/
-│   ├── components/          # React UI components
-│   │   ├── Header.tsx
+│   ├── components/              # React UI components
+│   │   ├── Header.tsx           # Title, mode toggle, score + breakdown
 │   │   ├── CharacterSilhouette.tsx
 │   │   ├── CluesList.tsx
+│   │   ├── ConversationView.tsx # Chat-style UI for AI Mode
 │   │   ├── GuessInput.tsx
 │   │   ├── FeedbackMessage.tsx
-│   │   └── GameOverModal.tsx
+│   │   ├── GameOverModal.tsx
+│   │   ├── WelcomeModal.tsx     # Intro + mode explanation
+│   │   └── DocumentationModal.tsx # "How to play" overlay
 │   ├── data/
 │   │   └── historicFigures.ts   # Game data and clues
+│   ├── hooks/
+│   │   └── useGame.ts           # Central game/LLM state + logic
+│   ├── reducers/
+│   │   └── gameReducer.ts       # Reducer backing useGame
+│   ├── services/
+│   │   └── llmService.ts        # OpenAI integration + guess validation
 │   ├── utils/
-│   │   └── gameUtils.ts         # Helper functions
+│   │   └── gameUtils.ts         # Scoring, shuffling, fuzzy matching
 │   ├── types.ts                 # TypeScript interfaces
-│   ├── App.tsx                  # Main game logic
+│   ├── App.tsx                  # App shell + layout using useGame
 │   ├── App.css                  # Styles and design tokens
 │   └── main.tsx                 # React entry point
-├── public/                      # Static assets (fonts)
+├── public/                      # Static assets (fonts, test HTML)
 ├── index.html
 ├── vite.config.ts
 ├── tsconfig.json
@@ -117,15 +142,21 @@ Edit `src/data/historicFigures.ts` and add to the array:
 
 **Scoring System:** Points decrease by 10 for each additional clue revealed. Every consecutive wrong guess deducts 5 points, but Classic rounds never drop below 50 points (AI conversations bottom out at 25).
 
-## 🔮 Future Plans
+## 🔮 AI Mode and Future Plans
 
-An LLM-powered mode is planned that will transform the game into an interactive conversation:
+An LLM-powered mode is now available and transforms the game into an interactive conversation:
 - Players ask free-form questions to historic figures
 - AI-generated responses in character
 - Dynamic, educational gameplay
-- Intelligent guess validation with fuzzy matching
+- Intelligent guess validation with fuzzy matching (plus local fuzzy matching fallback)
 
-See `WARP.md` for the complete implementation plan.
+To enable AI Mode locally, configure your OpenAI API key in `.env.local` (see `LLM_SETUP.md` for details), then toggle Classic/AI Mode from the header.
+
+Future improvements may include:
+- Additional historic figures and conversation prompts
+- Backend proxy for API calls in production
+- Richer conversation memory and hint strategies
+- Accessibility and animation polish for the chat UI
 
 ## 🤝 Contributing
 
