@@ -66,7 +66,6 @@ function App() {
         onShowDocs={handleShowDocs}
         disabled={inputDisabled}
       />
-
       <div className="character-and-score">
         <CharacterSilhouette revealed={isRevealed} eraTags={currentFigure.eraTags} />
         <div className="score-board">
@@ -82,7 +81,6 @@ function App() {
       </div>
 
       <main className="game-main">
-
         {llmMode ? (
           <ConversationView
             messages={messages}
