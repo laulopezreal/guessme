@@ -90,7 +90,7 @@ export function useGame() {
 
         // Only if we haven't revealed any clues yet (which is true after NEXT_FIGURE or INIT_GAME)
         if (revealedClues.length === 0) {
-            const initialClue = currentFigure.clues[0];
+            const initialClue = currentFigure.clues && currentFigure.clues.length > 0 ? currentFigure.clues[0] : undefined;
             if (initialClue) {
                 dispatch({
                     type: 'REVEAL_CLUE',
