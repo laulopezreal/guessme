@@ -132,3 +132,59 @@ export function selectNextClue(
     adaptive,
   };
 }
+
+export function levenshteinDistance(a: string, b: string): number {
+  const matrix = [];
+
+  for (let i = 0; i <= b.length; i++) {
+    matrix[i] = [i];
+  }
+
+  for (let j = 0; j <= a.length; j++) {
+    matrix[0][j] = j;
+  }
+
+  for (let i = 1; i <= b.length; i++) {
+    for (let j = 1; j <= a.length; j++) {
+      if (b.charAt(i - 1) === a.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1, // substitution
+          Math.min(
+            matrix[i][j - 1] + 1, // insertion
+            matrix[i - 1][j] + 1 // deletion
+          )
+        );
+      }
+    }
+  }
+
+  return matrix[b.length][a.length];
+}
+
+export function isCloseMatch(guess: string, answer: string): boolean {
+  const normalizedGuess = guess.trim().toLowerCase();
+  const normalizedAnswer = answer.trim().toLowerCase();
+
+  if (normalizedGuess === normalizedAnswer) return true;
+
+  // Check for partial match (e.g. "Einstein" in "Albert Einstein")
+  // But only if the guess is at least 4 chars to avoid matching short common words
+  if (normalizedGuess.length >= 4 && normalizedAnswer.includes(normalizedGuess)) {
+    return true;
+  }
+
+  // Check for reverse partial match (e.g. "Albert Einstein" contains "Einstein")
+  // This covers cases where the user might type the full name when only the last name is expected, though usually it's the other way around.
+  if (normalizedAnswer.length >= 4 && normalizedGuess.includes(normalizedAnswer)) {
+    return true;
+  }
+
+  // Fuzzy match with Levenshtein distance
+  // Allow 1 error for every 5 characters, max 3 errors
+  const maxErrors = Math.min(3, Math.floor(normalizedAnswer.length / 5) + 1);
+  const distance = levenshteinDistance(normalizedGuess, normalizedAnswer);
+
+  return distance <= maxErrors;
+}
