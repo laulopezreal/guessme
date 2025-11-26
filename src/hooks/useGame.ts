@@ -2,7 +2,7 @@ import { useCallback, useEffect, useReducer } from 'react';
 import { getEnabledFigures } from '../data/figuresConfig';
 import { calculatePoints, shuffleArray, selectNextClue, llmScoreWeights, isCloseMatch } from '../utils/gameUtils';
 import { isLLMConfigured, getInitialGreeting, sendMessage, validateGuess } from '../services/llmService';
-import type { Message, HistoricFigure } from '../types';
+import type { Message, HistoricFigure, Clue } from '../types';
 import { gameReducer, initialState } from '../reducers/gameReducer';
 
 const MISS_THRESHOLD = 2;
@@ -105,7 +105,7 @@ export function useGame() {
 
         const { nextClue, adaptive } = selectNextClue(currentFigure, revealedClues, misses, MISS_THRESHOLD);
 
-        if (!nextClue || revealedClues.some(clue => clue.text === nextClue.text)) return;
+        if (!nextClue || revealedClues.some((clue: Clue) => clue.text === nextClue.text)) return;
 
         dispatch({
             type: 'REVEAL_CLUE',
