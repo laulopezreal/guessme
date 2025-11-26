@@ -140,7 +140,7 @@ Edit `src/data/historicFigures.ts` and add to the array:
 
 **Guess Validation:** Case-insensitive matching against both the canonical name and alternate name variations for flexibility.
 
-**Scoring System:** Points decrease by 10 for each additional clue revealed. Every consecutive wrong guess deducts 5 points, but Classic rounds never drop below 50 points (AI conversations bottom out at 25).
+**Scoring System:** Points decrease by 10 for each additional clue revealed. Every consecutive wrong guess deducts 5 points, but Classic rounds never drop below 50 points.
 
 ## 🔮 AI Mode and Future Plans
 
