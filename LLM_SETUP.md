@@ -31,14 +31,19 @@ npm install openai
 ## 🧪 Step 3: Test the Integration
 
 1. **Start the dev server**
-   ```bash
-   npm run dev
-   ```
+```bash
+npm run dev
+```
 
-2. **Open the test page**
-   - Navigate to `http://localhost:5173/test-llm.html`
-   - Click the test buttons in order (1 → 2 → 3 → 4)
-   - Each test should show a green success message
+2. **Open the test page (optional)**
+- Navigate to `http://localhost:5173/test-llm.html`
+- Click the test buttons in order (1 → 2 → 3 → 4)
+- Each test should show a green success message
+
+3. **Try AI Mode in the actual game**
+- Open `http://localhost:5173/`
+- Click the mode toggle in the header to switch from Classic Mode to AI Mode
+- Ask a few questions and submit a guess to confirm scoring and validation work as expected
 
 ## 📁 What Was Created
 
@@ -55,14 +60,14 @@ Environment variables for API configuration (gitignored for security)
 ### `/test-llm.html`
 Interactive test page to verify everything works
 
-## 🎮 Next Steps
+## 🎮 Current Integration
 
-Now that the LLM service is working, we can:
+Now that the LLM service is working, the interactive AI Mode is fully wired into the game:
 
-1. **Update data models** - Add `Message` interface to `types.ts`
-2. **Create ConversationView component** - Chat interface with message bubbles
-3. **Update App.tsx** - Add conversation state and handlers
-4. **Build the interactive gameplay** - Replace static clues with AI chat
+1. **Data models** - `Message`, `ConversationState`, and related types live in `types.ts`
+2. **ConversationView component** - Chat interface with message bubbles and typing indicator
+3. **useGame hook + App.tsx** - Central game logic and UI wiring for Classic vs AI modes
+4. **Gameplay** - Static clues remain for Classic Mode; AI Mode uses the LLM for greetings, hints, and guess validation
 
 ## 💰 Cost Considerations
 
