@@ -31,9 +31,8 @@ npm install openai
 ## 🧪 Step 3: Test the Integration
 
 1. **Start the dev server**
-```bash
-npm run dev
-```
+  ```bash
+  npm run dev
 
 2. **Open the test page (optional)**
 - Navigate to `http://localhost:5173/test-llm.html`
