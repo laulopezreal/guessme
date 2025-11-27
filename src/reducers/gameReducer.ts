@@ -1,5 +1,6 @@
 import type { HistoricFigure, Clue, Message } from '../types';
 import { isLLMConfigured } from '../services/llmService';
+import type { ScoreBreakdown } from '../utils/gameUtils';
 
 export interface GameState {
   // Game Data
@@ -31,6 +32,10 @@ export interface GameState {
   questionsAsked: number;
   isTyping: boolean;
   outOfQuestions: boolean;
+
+  // Scoring summary
+  lastRoundBreakdown: ScoreBreakdown | null;
+  lastRoundNumber: number | null;
 }
 
 export const initialState: GameState = {
@@ -56,6 +61,8 @@ export const initialState: GameState = {
   questionsAsked: 0,
   isTyping: false,
   outOfQuestions: false,
+  lastRoundBreakdown: null,
+  lastRoundNumber: null,
 };
 
 export type GameAction =
@@ -67,7 +74,7 @@ export type GameAction =
   | { type: 'TOGGLE_DOCS'; payload: boolean }
   | { type: 'REVEAL_CLUE'; payload: { clue: Clue; isAdaptive?: boolean; adaptiveNotice?: string } }
   | { type: 'REGISTER_MISS'; payload: { feedback: string; triggerShake?: boolean } }
-  | { type: 'CORRECT_GUESS'; payload: { scoreDelta: number; feedback: string; voiceLine?: string } }
+  | { type: 'CORRECT_GUESS'; payload: { scoreDelta: number; feedback: string; voiceLine?: string; breakdown?: ScoreBreakdown } }
   | { type: 'SET_FEEDBACK'; payload: { message: string; type: 'success' | 'error' | '' } }
   | { type: 'CLEAR_SHAKE' }
   | { type: 'ADD_MESSAGE'; payload: Message }
@@ -174,6 +181,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         consecutiveMisses: 0,
         adaptiveHintNotice: '',
         outOfQuestions: false, // Reset this just in case
+        lastRoundBreakdown: action.payload.breakdown ?? state.lastRoundBreakdown,
+        lastRoundNumber: action.payload.breakdown ? state.round : state.lastRoundNumber,
       };
 
     case 'SET_FEEDBACK':
@@ -222,7 +231,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         isRevealed: true,
         inputDisabled: true,
         showNextButton: true,
-        feedbackMessage: `The answer was ${currentFigure.name}. Better luck next time!`,
+        feedbackMessage: `You gave up. The answer was ${currentFigure.name}. This round is over—you can't ask more questions for this figure.`,
         feedbackType: 'error',
         consecutiveMisses: 0,
         adaptiveHintNotice: '',

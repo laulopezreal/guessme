@@ -3,6 +3,8 @@ export interface Message {
   role: 'user' | 'assistant' | 'system';
   content: string;
   timestamp: number;
+  isGuess?: boolean;  // Mark messages that are guess attempts
+  guessResult?: 'correct' | 'incorrect' | 'typo';  // Result of the guess
 }
 
 export interface Clue {

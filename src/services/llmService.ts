@@ -55,6 +55,7 @@ RULES:
 5. Stay historically accurate
 6. Keep responses concise (2-3 sentences max)
 7. Be engaging and educational
+8. If the player sends greetings ("hi", "hello", "thanks"), respond in-character with a brief, period-appropriate line that makes it clear you're here to play the guessing game (e.g., that you don't have time for pleasantries and they should ask about your life/work or guess). Vary your wording each time; do NOT repeat the same sentence over and over.
 
 HINT PROGRESSION (current level: ${hintLevel}/5):
 - Level 1-2: Very vague hints about your era, field, or general achievements
@@ -136,15 +137,22 @@ export async function getInitialGreeting(figure: HistoricFigure): Promise<string
 Greet the player with a mysterious, character-appropriate welcome.
 - Speak in YOUR unique voice and personality
 - Do NOT reveal your name or specific achievements
-- Keep it brief (1-2 sentences)
-- Be welcoming but enigmatic
+- Keep the prose brief (1 sentence) and enigmatic
 - Hint at your character/era/field WITHOUT being obvious
+- Then add a short, catchy, funny poem of EXACTLY 2 lines that invites them to ask questions or get down to business
+- The poem should be playful and match your personality (e.g., a scientist might rhyme about curiosity, a leader about action)
 
 Examples of tone:
-- A scientist might be curious and analytical
-- An artist might be poetic and expressive  
-- A leader might be commanding and confident
-- An inventor might be imaginative and forward-thinking`;
+- A scientist might be curious and analytical in prose, then playful in verse
+- An artist might be poetic throughout
+- A leader might be commanding, then cheeky in the poem
+- An inventor might be imaginative and forward-thinking
+
+Format (exactly 3 lines):
+1) Line 1: greeting sentence.
+2) Line 2: poem verse 1.
+3) Line 3: poem verse 2.
+Do not add any extra lines or explanations beyond these three lines.`;
   
   try {
     const client = getOpenAIClient();
@@ -158,7 +166,7 @@ Examples of tone:
           content: 'Give a brief, mysterious greeting to welcome the player.' 
         },
       ],
-      max_tokens: 100,
+      max_tokens: 200,
       temperature: 0.9,
     });
 
@@ -170,7 +178,7 @@ Examples of tone:
 
     return greeting;
   } catch (error) {
-    console.error('LLM API Error:', error);
+    console.error('LLM API Error (getInitialGreeting):', error);
     // Fallback greeting
     return "Greetings! I am someone from history. Ask me questions to discover my identity.";
   }
@@ -195,18 +203,22 @@ PLAYER'S GUESS: "${guess}"
 RECENT CONVERSATION CONTEXT:
 ${conversationHistory.slice(-6).map(m => `${m.role}: ${m.content}`).join('\n')}
 
-Determine if the guess is correct, partially correct, or incorrect.
-- CORRECT: Player guessed the exact name or an acceptable alternate name
-- PARTIAL: Player described you correctly but didn't say the name (e.g., "the physicist who discovered relativity")
-- INCORRECT: Player guessed wrong
+Determine if the guess is correct, close (typo/misspelling), or incorrect:
+- CORRECT (isCorrect: true): Player guessed the exact name or an acceptable alternate name, OR made a minor typo/misspelling of the correct name
+- CLOSE (isCorrect: false, confidence: 0.7-0.9): Very close typo/misspelling that shows they know the answer (e.g., "Nikola Telsa" instead of "Nikola Tesla")
+- PARTIAL (isCorrect: false, confidence: 0.5): Player described you correctly but didn't say the name
+- INCORRECT (isCorrect: false, confidence: 0.0-0.3): Player guessed wrong person entirely
+
+Be LENIENT with typos and spelling variations. If the name is clearly recognizable despite typos, mark it CORRECT.
 
 Respond ONLY with valid JSON in this exact format:
 {"isCorrect": true/false, "confidence": 0.0-1.0, "feedback": "your feedback message"}
 
-Feedback should be:
-- Encouraging if correct
-- Helpful if partial (e.g., "You're describing me correctly! But can you name me?")
-- Gentle if incorrect (e.g., "Not quite, but keep asking questions!")`;
+Feedback examples:
+- If correct: "Yes! It's ${figure.name}!" or "Correct!"
+- If close typo: "Almost! You've got it, just check the spelling: ${figure.name}"
+- If partial description: "You're describing me correctly! But can you name me?"
+- If incorrect: "Not quite, but keep asking questions!"`;
 
     const client = getOpenAIClient();
 

@@ -8,6 +8,8 @@ interface GuessInputProps {
   llmMode?: boolean;
   onValidationError?: (message: string) => void;
   questionLimitReached?: boolean;
+  onGiveUp?: () => void;
+  canGiveUp?: boolean;
 }
 
 export default function GuessInput({
@@ -18,9 +20,13 @@ export default function GuessInput({
   llmMode = false,
   onValidationError,
   questionLimitReached = false,
+  onGiveUp,
+  canGiveUp = true,
 }: GuessInputProps) {
   const [input, setInput] = useState('');
   const [isQuestionMode, setIsQuestionMode] = useState(true);
+
+  type ForcedMode = 'question' | 'guess';
 
   const PROFANITY_LIST = ['fuck', 'shit', 'bitch', 'asshole', 'bastard', 'damn'];
   const MAX_QUESTION_LENGTH = 200;
@@ -31,44 +37,69 @@ export default function GuessInput({
 
   // Heuristic to detect when the user is probably making a guess instead of
   // asking a question while in AI mode.
+  // Goal: only auto-detect VERY obvious guesses in question mode, and let
+  // everything else behave like a normal question.
   const isLikelyGuess = (raw: string): boolean => {
     const trimmed = raw.trim();
     if (!trimmed) return false;
 
-    // Anything ending with a question mark is treated as a question.
-    if (trimmed.endsWith('?')) return false;
-
     const lower = trimmed.toLowerCase();
 
-    // Common guess-intent phrases.
+    // 1) Exclude greetings and pleasantries – let the figure handle them.
+    const greetings = [
+      'hello',
+      'hi',
+      'hey',
+      'greetings',
+      'welcome',
+      'thanks',
+      'thank you',
+      'please',
+      'good morning',
+      'good afternoon',
+      'good evening',
+    ];
+    const isGreeting = greetings.some((greeting) => {
+      return (
+        lower === greeting ||
+        lower === `${greeting}!` ||
+        lower === `${greeting}?` ||
+        lower.startsWith(`${greeting} `)
+      );
+    });
+    if (isGreeting) return false;
+
+    // 2) Explicit guess-style questions with a name.
+    // e.g. "are you Nikola Tesla?", "is it Albert Einstein?", "Einstein are you".
+    const guessQuestionPatterns = [
+      /^(are you|is it|could it be|is this|were you|was it)\s+.+/i,
+      /^(is your name|was your name)\s+.+/i,
+      /.+\s+(are you|is it)\??$/i, // Reversed: "Einstein are you?"
+    ];
+    if (guessQuestionPatterns.some((pattern) => pattern.test(trimmed))) {
+      return true;
+    }
+
+    // 3) Very explicit guess-intent phrases.
     const guessPhrases = [
       "i think it's",
       "i think its",
       'my guess is',
       "i'm guessing",
       'could it be',
-      "it's ",
-      'its ',
       'maybe it is',
       "maybe it's",
       'maybe its',
     ];
-    if (guessPhrases.some(phrase => lower.startsWith(phrase) || lower.includes(` ${phrase}`))) {
+    if (guessPhrases.some((phrase) => lower.startsWith(phrase))) {
       return true;
     }
 
-    const words = trimmed.split(/\s+/);
+    // 4) Anything ending with a question mark that didn't match above is a question.
+    if (trimmed.endsWith('?')) return false;
 
-    // Single word (likely a name) – treat as guess.
-    if (words.length === 1) {
-      return true;
-    }
-
-    // Short phrase with 2–3 words and minimal punctuation is also likely a name.
-    if (words.length <= 3 && !/[.,!?]/.test(trimmed)) {
-      return true;
-    }
-
+    // 5) Fallback: do NOT auto-treat single words or short phrases as guesses.
+    // Let the player switch to "Submit Guess" mode for those.
     return false;
   };
 
@@ -97,33 +128,22 @@ export default function GuessInput({
     return true;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = (forcedMode?: ForcedMode) => {
     const value = input.trim();
     if (!value) {
       onValidationError?.('Please enter a question or guess before submitting.');
       return;
     }
 
-    if (llmMode && isQuestionMode) {
-      const lower = value.toLowerCase();
-      const greetings = ['hello', 'welcome', 'hi', 'hey', 'greetings', 'thanks', 'thank you', 'please'];
-      
-      // Check if it's a greeting and show a period-appropriate message
-      if (greetings.some(greeting => lower === greeting || lower.startsWith(greeting + ' '))) {
-        onValidationError?.(
-          'Indeed, we meet. But we haven\'t time for pleasantries. Ask me something worth answering, or make your guess.'
-        );
-        return;
-      }
+    const treatAsQuestion =
+      llmMode && (forcedMode === 'question' || (!forcedMode && isQuestionMode));
 
-      // Autodetect guesses while the UI is in "Ask Question" mode.
-      if (isLikelyGuess(value)) {
-        onValidationError?.(
-          'This looks like a guess. To submit it as your answer (which will affect your score), switch to "Submit Guess" mode and send it again.'
-        );
-        // Keep the input so the user can resend it, but highlight that they
-        // should explicitly switch modes before it counts as a guess.
-        setIsQuestionMode(false);
+    if (treatAsQuestion) {
+      // Autodetect guesses only when submission wasn't explicitly forced.
+      if (!forcedMode && isLikelyGuess(value)) {
+        // Auto-submit as a guess - this feels more natural than forcing mode switch
+        onSubmitGuess(value);
+        setInput('');
         return;
       }
 
@@ -143,6 +163,18 @@ export default function GuessInput({
     setInput('');
   };
 
+  const handleAskClick = () => {
+    if (disabled || (llmMode && questionLimitReached)) return;
+    setIsQuestionMode(true);
+    handleSubmit('question');
+  };
+
+  const handleGuessClick = () => {
+    if (disabled) return;
+    setIsQuestionMode(false);
+    handleSubmit('guess');
+  };
+
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       handleSubmit();
@@ -155,14 +187,14 @@ export default function GuessInput({
         <div className="mode-toggle">
           <button
             className={`mode-btn ${isQuestionMode ? 'active' : ''}`}
-            onClick={() => setIsQuestionMode(true)}
+            onClick={handleAskClick}
             disabled={disabled || questionLimitReached}
           >
             Ask Question
           </button>
           <button
             className={`mode-btn ${!isQuestionMode ? 'active' : ''}`}
-            onClick={() => setIsQuestionMode(false)}
+            onClick={handleGuessClick}
             disabled={disabled}
           >
             Submit Guess
@@ -185,13 +217,24 @@ export default function GuessInput({
         autoComplete="off"
         style={triggerShake ? { animation: 'shake 0.5s' } : {}}
       />
-      <button 
-        className="submit-btn" 
-        onClick={handleSubmit}
-        disabled={disabled || (llmMode && isQuestionMode && questionLimitReached)}
-      >
-        {llmMode && isQuestionMode ? 'Ask' : 'Submit Guess'}
-      </button>
+      {!llmMode && (
+        <button 
+          className="submit-btn" 
+          onClick={() => handleSubmit('guess')}
+          disabled={disabled}
+        >
+          Submit Guess
+        </button>
+      )}
+      {onGiveUp && canGiveUp && (
+        <button
+          type="button"
+          className="give-up-btn"
+          onClick={onGiveUp}
+        >
+          Give Up
+        </button>
+      )}
     </div>
   );
 }

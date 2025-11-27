@@ -8,6 +8,7 @@ interface ConversationViewProps {
   questionLimit: number;
   warningThreshold: number;
   onResetConversation: () => void;
+  canResetConversation?: boolean;
 }
 
 export default function ConversationView({
@@ -17,6 +18,7 @@ export default function ConversationView({
   questionLimit,
   warningThreshold,
   onResetConversation,
+  canResetConversation = true,
 }: ConversationViewProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -25,8 +27,8 @@ export default function ConversationView({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
-  // Filter out system messages (only show user and assistant)
-  const visibleMessages = messages.filter(msg => msg.role !== 'system');
+  // Show all messages including system messages
+  const visibleMessages = messages;
   const nearLimit = remainingQuestions <= warningThreshold;
   const outOfQuestions = remainingQuestions <= 0;
 
@@ -41,6 +43,7 @@ export default function ConversationView({
           <button
             className="reset-btn"
             onClick={onResetConversation}
+            disabled={!canResetConversation}
           >
             New Conversation
           </button>
@@ -50,8 +53,8 @@ export default function ConversationView({
       {nearLimit && (
         <div className={`inline-warning ${outOfQuestions ? 'warning-critical' : ''}`}>
           {outOfQuestions
-            ? 'You have no questions left. Start a new conversation or make your guess!'
-            : `You are nearing the question limit. ${remainingQuestions} question${remainingQuestions === 1 ? '' : 's'} remaining.`}
+            ? 'You are out of questions for this chat. Start a new conversation or submit your best guess.'
+            : `You are nearing the question limit for this chat. ${remainingQuestions} question${remainingQuestions === 1 ? '' : 's'} left before you need to start a new conversation.`}
         </div>
       )}
 
@@ -64,7 +67,13 @@ export default function ConversationView({
           visibleMessages.map((message) => (
             <div
               key={message.id}
-              className={`message ${message.role === 'user' ? 'message-user' : 'message-assistant'}`}
+              className={`message ${
+                message.role === 'system' 
+                  ? 'message-system' 
+                  : message.role === 'user'
+                    ? 'message-user'
+                    : 'message-assistant'
+              }`}
             >
               <div className="message-content">
                 {message.content}

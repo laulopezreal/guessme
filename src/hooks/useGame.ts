@@ -21,6 +21,8 @@ export function useGame() {
         gameEnded,
         feedbackMessage,
         feedbackType,
+        lastRoundBreakdown,
+        lastRoundNumber,
         personaLine,
         isRevealed,
         inputDisabled,
@@ -44,15 +46,41 @@ export function useGame() {
 
         dispatch({ type: 'SET_IS_TYPING', payload: true });
         try {
-            const greeting = await getInitialGreeting(figure);
+            const rawGreeting = await getInitialGreeting(figure);
+
+            // We expect the model to return exactly 3 lines:
+            // 1) greeting sentence
+            // 2) poem line 1
+            // 3) poem line 2
+            const lines = rawGreeting
+                .split('\n')
+                .map((line) => line.trim())
+                .filter((line) => line.length > 0);
+
+            const greetingLine = lines[0] ?? rawGreeting;
+            const poemText = lines.slice(1).join('\n');
+            const baseTimestamp = Date.now();
+
             const greetingMessage: Message = {
-                id: `msg-${Date.now()}`,
+                id: `msg-${baseTimestamp}`,
                 role: 'assistant',
-                content: greeting,
-                timestamp: Date.now(),
+                content: greetingLine,
+                timestamp: baseTimestamp,
             };
-            // We use RESET_CONVERSATION to set the initial greeting
+
+            // Seed conversation with the greeting line
             dispatch({ type: 'RESET_CONVERSATION', payload: { initialMessage: greetingMessage } });
+
+            // If we have poem content, add it as a second assistant message
+            if (poemText) {
+                const poemMessage: Message = {
+                    id: `msg-${baseTimestamp}-poem`,
+                    role: 'assistant',
+                    content: poemText,
+                    timestamp: baseTimestamp + 1,
+                };
+                dispatch({ type: 'ADD_MESSAGE', payload: poemMessage });
+            }
         } catch (error) {
             console.error('Failed to get initial greeting:', error);
             dispatch({
@@ -162,6 +190,17 @@ export function useGame() {
             dispatch({ type: 'ADD_MESSAGE', payload: assistantMessage });
         } catch (error) {
             console.error('Failed to get AI response:', error);
+            console.error('Error details:', error instanceof Error ? error.message : String(error));
+            
+            // Add error as system message in conversation
+            const errorMsg: Message = {
+                id: `error-${Date.now()}`,
+                role: 'system',
+                content: `⚠️ AI Error: ${error instanceof Error ? error.message : 'Unknown error'}. Check console for details.`,
+                timestamp: Date.now(),
+            };
+            dispatch({ type: 'ADD_MESSAGE', payload: errorMsg });
+            
             dispatch({
                 type: 'SET_FEEDBACK',
                 payload: { message: 'Failed to get AI response. Try again.', type: 'error' }
@@ -197,9 +236,28 @@ export function useGame() {
 
         // LLM mode: use AI validation
         if (llmMode) {
+            // Add the original user message to conversation
+            const userMessage: Message = {
+                id: `user-${Date.now()}`,
+                role: 'user',
+                content: guess,
+                timestamp: Date.now(),
+            };
+            dispatch({ type: 'ADD_MESSAGE', payload: userMessage });
+
+            // Add system message indicating this is being treated as a guess
+            const systemNotice: Message = {
+                id: `system-${Date.now() + 1}`,
+                role: 'system',
+                content: `Treating "${guess}" as a guess...`,
+                timestamp: Date.now() + 1,
+            };
+            dispatch({ type: 'ADD_MESSAGE', payload: systemNotice });
+
             dispatch({ type: 'SET_IS_TYPING', payload: true });
             try {
                 const result = await validateGuess(guess, currentFigure, messages);
+                console.log('Guess validation result:', { guess, result });
 
                 if (result.isCorrect) {
                     // Correct guess
@@ -212,15 +270,57 @@ export function useGame() {
                         llmScoreWeights
                     );
 
+                    // Figure confirms correct answer
+                    const figureResponse: Message = {
+                        id: `response-${Date.now()}`,
+                        role: 'assistant',
+                        content: `You are correct! I am indeed ${currentFigure.name}. Well done!`,
+                        timestamp: Date.now(),
+                    };
+                    dispatch({ type: 'ADD_MESSAGE', payload: figureResponse });
+
+                    // Add score notification
+                    const scoreMessage: Message = {
+                        id: `score-${Date.now()}`,
+                        role: 'system',
+                        content: `You earned ${breakdown.total} points!`,
+                        timestamp: Date.now(),
+                    };
+                    dispatch({ type: 'ADD_MESSAGE', payload: scoreMessage });
+
                     dispatch({
                         type: 'CORRECT_GUESS',
                         payload: {
                             scoreDelta: breakdown.total,
                             feedback: `${result.feedback} You earned ${breakdown.total} points!`,
-                            voiceLine: currentFigure.voiceLine
+                            voiceLine: currentFigure.voiceLine,
+                            breakdown,
                         }
                     });
+                } else if (result.confidence >= 0.7) {
+                    // Close typo/misspelling - give helpful feedback without penalty
+                    const typoMessage: Message = {
+                        id: `typo-${Date.now()}`,
+                        role: 'assistant',
+                        content: `${result.feedback}`,
+                        timestamp: Date.now(),
+                    };
+                    dispatch({ type: 'ADD_MESSAGE', payload: typoMessage });
+
+                    dispatch({
+                        type: 'SET_FEEDBACK',
+                        payload: { message: result.feedback, type: 'success' }
+                    });
                 } else {
+                    // Incorrect guess - figure responds
+                    const figureResponse: Message = {
+                        id: `response-${Date.now()}`,
+                        role: 'assistant',
+                        content: `Incorrect. That is not who I am. Keep asking questions to learn more about me.`,
+                        timestamp: Date.now(),
+                    };
+                    dispatch({ type: 'ADD_MESSAGE', payload: figureResponse });
+
                     handleIncorrectGuess(result.feedback);
                 }
             } catch (error) {
@@ -256,7 +356,8 @@ export function useGame() {
                 payload: {
                     scoreDelta: breakdown.total,
                     feedback: `Correct! It's ${currentFigure.name}! You earned ${breakdown.total} points!`,
-                    voiceLine: currentFigure.voiceLine
+                    voiceLine: currentFigure.voiceLine,
+                    breakdown,
                 }
             });
         } else {
@@ -284,7 +385,7 @@ export function useGame() {
         } else {
             dispatch({
                 type: 'SET_FEEDBACK',
-                payload: { message: 'Please configure your API key in .env.local to use AI mode.', type: 'error' }
+                payload: { message: 'Please configure your API key in .env.local (see LLM_SETUP.md) to use AI mode.', type: 'error' }
             });
         }
     }, [llmMode]);
@@ -352,6 +453,8 @@ export function useGame() {
         showDocs,
         outOfQuestions,
         currentFigure,
+        lastRoundBreakdown,
+        lastRoundNumber,
 
         // Actions
         revealNextClue,
