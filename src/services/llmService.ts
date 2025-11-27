@@ -204,8 +204,8 @@ RECENT CONVERSATION CONTEXT:
 ${conversationHistory.slice(-6).map(m => `${m.role}: ${m.content}`).join('\n')}
 
 Determine if the guess is correct, close (typo/misspelling), or incorrect:
-- CORRECT (isCorrect: true): Player guessed the exact name or an acceptable alternate name, OR made a minor typo/misspelling of the correct name
-- CLOSE (isCorrect: false, confidence: 0.7-0.9): Very close typo/misspelling that shows they know the answer (e.g., "Nikola Telsa" instead of "Nikola Tesla")
+- CORRECT (isCorrect: true): The guess is the correct name, an accepted alternate, or a very obvious typo (e.g., "Albert Einstien", "Nikola Telsa"). Be lenient with spelling.
+- CLOSE (isCorrect: false, confidence: 0.7-0.9): The guess is not the correct name but is very similar, suggesting a typo but with some ambiguity. This should be used sparingly.
 - PARTIAL (isCorrect: false, confidence: 0.5): Player described you correctly but didn't say the name
 - INCORRECT (isCorrect: false, confidence: 0.0-0.3): Player guessed wrong person entirely
 
