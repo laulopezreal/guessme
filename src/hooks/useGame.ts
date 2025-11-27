@@ -237,20 +237,21 @@ export function useGame() {
         // LLM mode: use AI validation
         if (llmMode) {
             // Add the original user message to conversation
+            const now = Date.now();
             const userMessage: Message = {
-                id: `user-${Date.now()}`,
+                id: `user-${now}`,
                 role: 'user',
                 content: guess,
-                timestamp: Date.now(),
+                timestamp: now,
             };
             dispatch({ type: 'ADD_MESSAGE', payload: userMessage });
 
             // Add system message indicating this is being treated as a guess
             const systemNotice: Message = {
-                id: `system-${Date.now() + 1}`,
+                id: `system-${now + 1}`,
                 role: 'system',
                 content: `Treating "${guess}" as a guess...`,
-                timestamp: Date.now() + 1,
+                timestamp: now + 1,
             };
             dispatch({ type: 'ADD_MESSAGE', payload: systemNotice });
 
