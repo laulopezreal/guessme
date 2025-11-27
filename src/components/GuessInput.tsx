@@ -37,8 +37,9 @@ export default function GuessInput({
 
   // Heuristic to detect when the user is probably making a guess instead of
   // asking a question while in AI mode.
-  // Goal: only auto-detect VERY obvious guesses in question mode, and let
-  // everything else behave like a normal question.
+  // Goal: only auto-detect VERY obvious "are you X"-style guesses in question
+  // mode, where X is one of our known historic figures, and let everything
+  // else behave like a normal question.
   const isLikelyGuess = (raw: string): boolean => {
     const trimmed = raw.trim();
     if (!trimmed) return false;
@@ -69,18 +70,59 @@ export default function GuessInput({
     });
     if (isGreeting) return false;
 
-    // 2) Explicit guess-style questions with a name.
-    // e.g. "are you Nikola Tesla?", "is it Albert Einstein?", "Einstein are you".
-    const guessQuestionPatterns = [
-      /^(are you|is it|could it be|is this|were you|was it)\s+.+/i,
-      /^(is your name|was your name)\s+.+/i,
-      /.+\s+(are you|is it)\??$/i, // Reversed: "Einstein are you?"
+    // Known figure name tokens (lowercase) – surnames and key first names.
+    const figureTokens = [
+      'einstein',
+      'curie',
+      'tesla',
+      'newton',
+      'galileo',
+'shakespeare','shakespear','shakspear',
+      'napoleon',
+      'leonardo',
+      'joan',
+      'elizabeth',
+      'marie',
+      'albert',
+      'nikola',
+      'isaac',
+      'william',
     ];
-    if (guessQuestionPatterns.some((pattern) => pattern.test(trimmed))) {
-      return true;
+
+    const containsFigureToken = (text: string): boolean => {
+      const tokens = text.toLowerCase().split(/\s+/);
+      return tokens.some((t) => figureTokens.includes(t));
+    };
+
+    // 2) Forward pattern: "are you X", "is it X", etc.
+    const forwardMatch = /^(are you|is it|could it be|is this|were you|was it)\s+(.+)/i.exec(trimmed);
+    if (forwardMatch) {
+      const tail = forwardMatch[2];
+      if (containsFigureToken(tail)) {
+        return true;
+      }
     }
 
-    // 3) Very explicit guess-intent phrases.
+    // 3) "you are X" pattern, which players often use informally.
+    const youAreMatch = /^(you are|you're)\s+(.+)/i.exec(trimmed);
+    if (youAreMatch) {
+      const tail = youAreMatch[2];
+      if (containsFigureToken(tail)) {
+        return true;
+      }
+    }
+
+    // 4) Reverse pattern: "Einstein are you?", "Marie Curie is it".
+    const reverseMatch = /^(.+?)\s+(are you|is it)\??$/i.exec(trimmed);
+    if (reverseMatch) {
+      const head = reverseMatch[1];
+      if (containsFigureToken(head)) {
+        return true;
+      }
+    }
+
+    // 5) Very explicit guess-intent phrases with something that looks like a
+    // known figure name.
     const guessPhrases = [
       "i think it's",
       "i think its",
@@ -91,15 +133,29 @@ export default function GuessInput({
       "maybe it's",
       'maybe its',
     ];
-    if (guessPhrases.some((phrase) => lower.startsWith(phrase))) {
+    for (const phrase of guessPhrases) {
+      if (lower.startsWith(phrase)) {
+        const rest = lower.slice(phrase.length).trim();
+        if (containsFigureToken(rest)) {
+          return true;
+        }
+      }
+    }
+
+    // 5) Single-word guesses that directly match known surnames/short names
+    // for our historic figures (e.g. "einstein", "tesla"). These are very
+    // likely to be guesses rather than questions.
+    const words = trimmed.split(/\s+/);
+    if (words.length === 1 && figureTokens.includes(lower)) {
       return true;
     }
 
-    // 4) Anything ending with a question mark that didn't match above is a question.
+    // 6) Anything ending with a question mark that didn't match above is a
+    // normal question.
     if (trimmed.endsWith('?')) return false;
 
-    // 5) Fallback: do NOT auto-treat single words or short phrases as guesses.
-    // Let the player switch to "Submit Guess" mode for those.
+    // 7) Fallback: do NOT auto-treat other inputs as guesses. The user can
+    // always switch to "Submit Guess" mode explicitly.
     return false;
   };
 
@@ -166,18 +222,27 @@ export default function GuessInput({
   const handleAskClick = () => {
     if (disabled || (llmMode && questionLimitReached)) return;
     setIsQuestionMode(true);
-    handleSubmit('question');
+    // Let the normal submission path run, so auto guess detection still applies
+    handleSubmit();
   };
 
   const handleGuessClick = () => {
     if (disabled) return;
     setIsQuestionMode(false);
+    // Explicitly force this as a guess submission
     handleSubmit('guess');
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      handleSubmit();
+      // Enter should behave like clicking the currently active mode button.
+      // In question mode, it goes through auto-detection; in guess mode,
+      // it behaves like an explicit guess.
+      if (llmMode && !isQuestionMode) {
+        handleSubmit('guess');
+      } else {
+        handleSubmit();
+      }
     }
   };
 
