@@ -271,20 +271,21 @@ export function useGame() {
                     );
 
                     // Figure confirms correct answer
+                    const now = Date.now();
                     const figureResponse: Message = {
-                        id: `response-${Date.now()}`,
+                        id: `response-${now}`,
                         role: 'assistant',
                         content: `You are correct! I am indeed ${currentFigure.name}. Well done!`,
-                        timestamp: Date.now(),
+                        timestamp: now,
                     };
                     dispatch({ type: 'ADD_MESSAGE', payload: figureResponse });
 
                     // Add score notification
                     const scoreMessage: Message = {
-                        id: `score-${Date.now()}`,
+                        id: `score-${now + 1}`,
                         role: 'system',
                         content: `You earned ${breakdown.total} points!`,
-                        timestamp: Date.now(),
+                        timestamp: now + 1,
                     };
                     dispatch({ type: 'ADD_MESSAGE', payload: scoreMessage });
 
