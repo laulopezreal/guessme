@@ -85,7 +85,7 @@ function App() {
               consecutiveMisses,
             }
           : {
-              cluesUsed: revealedClues.length || 1,
+              cluesUsed: revealedClues.length,
               adaptiveHintsUsed: 0,
               consecutiveMisses,
             },
