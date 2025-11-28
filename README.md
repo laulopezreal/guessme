@@ -6,7 +6,7 @@ A React-based guessing game where players identify historic figures either throu
 
 ## 🎮 How to Play
 
-The game has two modes you can switch between at any time:
+The game has two modes (configured before starting the game):
 
 ### Classic Mode (Clues)
 
@@ -43,6 +43,11 @@ The game includes diverse historic figures from science, arts, politics, and cul
 # Install dependencies
 npm install
 
+# Configure game mode (optional)
+cp .env.example .env.local
+# Edit .env.local to set VITE_GAME_MODE to 'classic' or 'ai'
+# For AI mode, also add your VITE_LLM_API_KEY
+
 # Start development server
 npm run dev
 
@@ -63,7 +68,7 @@ npm run dev
 guessme/
 ├── src/
 │   ├── components/              # React UI components
-│   │   ├── Header.tsx           # Title, mode toggle, score + breakdown
+│   │   ├── Header.tsx           # Title, mode display, docs button
 │   │   ├── CharacterSilhouette.tsx
 │   │   ├── CluesList.tsx
 │   │   ├── ConversationView.tsx # Chat-style UI for AI Mode
@@ -150,7 +155,13 @@ An LLM-powered mode is now available and transforms the game into an interactive
 - Dynamic, educational gameplay
 - Intelligent guess validation with fuzzy matching (plus local fuzzy matching fallback)
 
-To enable AI Mode locally, configure your OpenAI API key in `.env.local` (see `LLM_SETUP.md` for details), then toggle Classic/AI Mode from the header.
+To enable AI Mode locally:
+1. Copy `.env.example` to `.env.local`
+2. Set `VITE_GAME_MODE=ai` in `.env.local`
+3. Add your OpenAI API key as `VITE_LLM_API_KEY` (see `LLM_SETUP.md` for details)
+4. Restart the dev server
+
+The mode cannot be changed during gameplay - you must update `.env.local` and restart the server to switch modes.
 
 Future improvements may include:
 - Additional historic figures and conversation prompts

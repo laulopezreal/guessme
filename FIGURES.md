@@ -100,8 +100,8 @@ Delete the entire object from the array. **Warning**: This permanently removes t
    ```
 
 2. In the game:
-   - **Classic Mode**: Check that clues make sense and progress logically
-   - **AI Mode**: Test that the AI can accurately portray the figure
+   - **Classic Mode**: Set `VITE_GAME_MODE=classic` in `.env.local`, restart server, and check that clues make sense and progress logically
+   - **AI Mode**: Set `VITE_GAME_MODE=ai` in `.env.local`, restart server, and test that the AI can accurately portray the figure
    - **Guess Validation**: Try various name formats to ensure alternate names work
 
 3. Check the count:
@@ -139,7 +139,7 @@ Delete the entire object from the array. **Warning**: This permanently removes t
 
 ### AI Mode Considerations
 
-When `llmMode` is enabled, the AI uses your clues as reference material. Make sure:
+When AI mode is enabled (via `VITE_GAME_MODE=ai` in `.env.local`), the AI uses your clues as reference material. Make sure:
 - Clues contain factual, verifiable information
 - Information is rich enough for the AI to roleplay
 - Facts are from different aspects of the figure's life
