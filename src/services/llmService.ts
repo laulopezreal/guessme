@@ -3,6 +3,7 @@ import type { HistoricFigure } from '../types';
 
 const API_KEY = import.meta.env.VITE_LLM_API_KEY;
 const MODEL = import.meta.env.VITE_LLM_MODEL || 'gpt-4o-mini';
+const GAME_MODE = import.meta.env.VITE_GAME_MODE || 'classic';
 const MAX_TOKENS = 250;
 const MAX_HISTORY_MESSAGES = 12; // Keeps context tight
 
@@ -273,4 +274,16 @@ Feedback examples:
  */
 export function isLLMConfigured(): boolean {
   return !!API_KEY && API_KEY !== 'your_api_key_here';
+}
+
+/**
+ * Get the configured game mode from environment variables
+ * Returns 'ai' only if mode is set to 'ai' and LLM is configured
+ * Otherwise returns 'classic'
+ */
+export function getGameMode(): 'classic' | 'ai' {
+  if (GAME_MODE === 'ai' && isLLMConfigured()) {
+    return 'ai';
+  }
+  return 'classic';
 }

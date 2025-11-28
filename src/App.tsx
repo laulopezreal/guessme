@@ -49,7 +49,6 @@ function App() {
     handleAskQuestion,
     handleGuess,
     nextFigure,
-    handleModeToggle,
     restartGame,
     handleStartGame,
     handleShowDocs,
@@ -122,9 +121,7 @@ function App() {
     <div className="game-container">
       <Header
         llmMode={llmMode}
-        onToggleMode={handleModeToggle}
         onShowDocs={handleShowDocs}
-        disabled={inputDisabled}
       />
       <div className="character-and-score">
         <CharacterSilhouette revealed={isRevealed} eraTags={currentFigure.eraTags} />

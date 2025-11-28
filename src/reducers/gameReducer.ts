@@ -1,5 +1,5 @@
 import type { HistoricFigure, Clue, Message } from '../types';
-import { isLLMConfigured } from '../services/llmService';
+import { getGameMode } from '../services/llmService';
 import type { ScoreBreakdown } from '../utils/gameUtils';
 
 export interface GameState {
@@ -56,7 +56,7 @@ export const initialState: GameState = {
   adaptiveHintNotice: '',
   showWelcome: true,
   showDocs: false,
-  llmMode: isLLMConfigured(),
+  llmMode: getGameMode() === 'ai',
   messages: [],
   questionsAsked: 0,
   isTyping: false,
@@ -70,7 +70,6 @@ export type GameAction =
   | { type: 'START_GAME' }
   | { type: 'RESTART_GAME'; payload: { figures: HistoricFigure[] } }
   | { type: 'NEXT_FIGURE' }
-  | { type: 'SET_LLM_MODE'; payload: boolean }
   | { type: 'TOGGLE_DOCS'; payload: boolean }
   | { type: 'REVEAL_CLUE'; payload: { clue: Clue; isAdaptive?: boolean; adaptiveNotice?: string } }
   | { type: 'REGISTER_MISS'; payload: { feedback: string; triggerShake?: boolean } }
@@ -145,9 +144,6 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         outOfQuestions: false,
       };
     }
-
-    case 'SET_LLM_MODE':
-      return { ...state, llmMode: action.payload };
 
     case 'TOGGLE_DOCS':
       return { ...state, showDocs: action.payload };
