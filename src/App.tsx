@@ -8,6 +8,7 @@ import GameOverModal from './components/GameOverModal';
 import ConversationView from './components/ConversationView';
 import WelcomeModal from './components/WelcomeModal';
 import DocumentationModal from './components/DocumentationModal';
+import Footer from './components/Footer';
 import { useGame } from './hooks/useGame';
 import { calculatePoints, classicScoreWeights, llmScoreWeights, type ScoreBreakdown } from './utils/gameUtils';
 import './App.css';
@@ -233,6 +234,8 @@ function App() {
           </div>
         </div>
       )}
+
+      <Footer />
     </div>
   );
 }
