@@ -3,7 +3,7 @@ import type { HistoricFigure } from '../types';
 export const historicFigures: HistoricFigure[] = [
   {
     name: "Albert Einstein",
-    alternateNames: ["einstein"],
+    alternateNames: ["einstein", "albert", "albert einstein"],
     eraTags: ["Modern Era", "Physics"],
     voiceLine: "Imagination will take you everywhere—ready for your next thought experiment?",
     clues: [
@@ -16,7 +16,7 @@ export const historicFigures: HistoricFigure[] = [
   },
   {
     name: "Galileo Galilei",
-    alternateNames: ["galileo"],
+    alternateNames: ["galileo", "galilei", "galileo galilei"],
     eraTags: ["Renaissance", "Astronomy"],
     voiceLine: "And yet it moves. Care to observe more?",
     clues: [
@@ -29,7 +29,7 @@ export const historicFigures: HistoricFigure[] = [
   },
   {
     name: "Leonardo da Vinci",
-    alternateNames: ["leonardo", "da vinci"],
+    alternateNames: ["leonardo", "da vinci", "leonardo da vinci"],
     eraTags: ["Renaissance", "Art & Invention"],
     voiceLine: "Simplicity is the ultimate sophistication. Ready for another masterpiece?",
     clues: [
@@ -42,7 +42,7 @@ export const historicFigures: HistoricFigure[] = [
   },
   {
     name: "William Shakespeare",
-    alternateNames: ["shakespeare"],
+    alternateNames: ["shakespeare", "william", "william shakespeare"],
     eraTags: ["Elizabethan", "Literature"],
     voiceLine: "All the world's a stage—shall we play another round?",
     clues: [
@@ -55,7 +55,7 @@ export const historicFigures: HistoricFigure[] = [
   },
   {
     name: "Marie Curie",
-    alternateNames: ["curie", "marie sklodowska-curie"],
+    alternateNames: ["curie", "marie", "marie curie", "marie sklodowska-curie"],
     eraTags: ["Industrial Age", "Chemistry"],
     voiceLine: "Nothing in life is to be feared—it is only to be understood. Onward?",
     clues: [
@@ -68,7 +68,7 @@ export const historicFigures: HistoricFigure[] = [
   },
   {
     name: "Isaac Newton",
-    alternateNames: ["newton"],
+    alternateNames: ["newton", "isaac", "isaac newton"],
     eraTags: ["Scientific Revolution", "Mathematics"],
     voiceLine: "If I have seen further, it is by standing on shoulders—care to climb higher?",
     clues: [
@@ -81,7 +81,7 @@ export const historicFigures: HistoricFigure[] = [
   },
   {
     name: "Nikola Tesla",
-    alternateNames: ["tesla"],
+    alternateNames: ["tesla", "nikola", "nikola tesla"],
     eraTags: ["Industrial Age", "Engineering"],
     voiceLine: "The present is theirs; the future is mine. Ready to spark another idea?",
     clues: [
@@ -94,7 +94,7 @@ export const historicFigures: HistoricFigure[] = [
   },
   {
     name: "Napoleon Bonaparte",
-    alternateNames: ["napoleon"],
+    alternateNames: ["napoleon", "bonaparte", "napoleon bonaparte"],
     eraTags: ["Napoleonic Era", "Military"],
     voiceLine: "Impossible is a word to be found only in the dictionary of fools. March to the next battle?",
     clues: [
@@ -107,7 +107,7 @@ export const historicFigures: HistoricFigure[] = [
   },
   {
     name: "Joan of Arc",
-    alternateNames: ["joan", "jeanne d'arc"],
+    alternateNames: ["joan", "joan of arc", "jeanne d'arc"],
     eraTags: ["Middle Ages", "Leadership"],
     voiceLine: "I am not afraid—I was born to do this. Shall we ride again?",
     clues: [
