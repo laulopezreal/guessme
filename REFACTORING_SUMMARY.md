@@ -26,7 +26,6 @@ A new custom hook that encapsulates all game logic including:
 - `resetConversation()` - Resets AI conversation
 
 #### UI Actions
-- `handleModeToggle()` - Switches between classic and AI modes
 - `handleStartGame()` - Starts game from welcome modal
 - `handleShowDocs()` / `handleCloseDocs()` - Documentation modal controls
 - `handleValidationError()` - Centralized error handling

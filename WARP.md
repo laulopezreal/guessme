@@ -20,6 +20,21 @@ This is a React + TypeScript guessing game called "Who Am I?" where players gues
 npm install
 ```
 
+### Configuration
+
+Copy `.env.example` to `.env.local` and configure:
+
+```bash
+cp .env.example .env.local
+```
+
+Edit `.env.local`:
+- `VITE_GAME_MODE`: Set to `classic` or `ai` (defaults to `classic`)
+- `VITE_LLM_API_KEY`: Required for AI mode - your OpenAI API key
+- `VITE_LLM_MODEL`: OpenAI model to use (defaults to `gpt-4o-mini`)
+
+The game mode is set via environment variables and cannot be toggled during gameplay. To switch modes, update `.env.local` and restart the dev server.
+
 ### Running the Project
 
 ```bash
@@ -171,6 +186,7 @@ Fonts are loaded via `@font-face` in `src/App.css`. To add/replace fonts:
 - **Build process**: Uses Vite for fast HMR (Hot Module Replacement) in dev mode
 - **Type safety**: TypeScript provides compile-time type checking and autocomplete
 - **Type-only imports**: Use `import type` for TypeScript interfaces (required by `verbatimModuleSyntax`)
+- **Game mode**: Controlled via `VITE_GAME_MODE` environment variable in `.env.local` - cannot be changed at runtime
 - **Case-insensitive matching**: All guess validation converts to lowercase
 - **Answer flexibility**: Always add common variations to `alternateNames` (e.g., "Einstein" for "Albert Einstein")
 - **Clue progression**: First clue auto-reveals when figure loads; remaining 4 require button clicks

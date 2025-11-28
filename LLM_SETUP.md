@@ -15,12 +15,15 @@ npm install openai
    - Visit https://platform.openai.com/api-keys
    - Create a new API key (keep it secret!)
 
-2. **Add it to `.env.local`**
-   - Open `.env.local` in the project root
-   - Replace `your_api_key_here` with your actual API key:
+2. **Configure `.env.local`**
+   - Copy `.env.example` to `.env.local` if you haven't already:
+   ```bash
+   cp .env.example .env.local
    ```
+   - Edit `.env.local` and update these values:
+   ```
+   VITE_GAME_MODE=ai
    VITE_LLM_API_KEY=sk-proj-your-actual-key-here
-   VITE_LLM_PROVIDER=openai
    VITE_LLM_MODEL=gpt-4o-mini
    ```
 
@@ -40,9 +43,13 @@ npm install openai
 - Each test should show a green success message
 
 3. **Try AI Mode in the actual game**
+- Make sure `VITE_GAME_MODE=ai` is set in `.env.local`
+- Restart the dev server if it's already running
 - Open `http://localhost:5173/`
-- Click the mode toggle in the header to switch from Classic Mode to AI Mode
+- The game should start in AI Mode (you'll see "Mode: AI" in the header)
 - Ask a few questions and submit a guess to confirm scoring and validation work as expected
+
+**Note**: To switch back to Classic Mode, set `VITE_GAME_MODE=classic` in `.env.local` and restart the server.
 
 ## 📁 What Was Created
 
@@ -53,8 +60,11 @@ The core LLM service with functions:
 - `sendMessage(history, figure, hintLevel)` - Send question and get response
 - `validateGuess(guess, figure, history)` - Intelligent guess validation
 
+### `/.env.example`
+Example environment variables file with documentation
+
 ### `/.env.local`
-Environment variables for API configuration (gitignored for security)
+Your local environment variables for API configuration (gitignored for security)
 
 ### `/test-llm.html`
 Interactive test page to verify everything works

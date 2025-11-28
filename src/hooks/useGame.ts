@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useReducer } from 'react';
 import { getEnabledFigures } from '../data/figuresConfig';
 import { calculatePoints, shuffleArray, selectNextClue, llmScoreWeights, isCloseMatch } from '../utils/gameUtils';
-import { isLLMConfigured, getInitialGreeting, sendMessage, validateGuess } from '../services/llmService';
+import { getInitialGreeting, sendMessage, validateGuess } from '../services/llmService';
 import type { Message, HistoricFigure, Clue } from '../types';
 import { gameReducer, initialState } from '../reducers/gameReducer';
 
@@ -85,9 +85,8 @@ export function useGame() {
             console.error('Failed to get initial greeting:', error);
             dispatch({
                 type: 'SET_FEEDBACK',
-                payload: { message: 'AI mode failed. Switching to classic mode.', type: 'error' }
+                payload: { message: 'AI mode failed. Please check your configuration.', type: 'error' }
             });
-            dispatch({ type: 'SET_LLM_MODE', payload: false });
         } finally {
             dispatch({ type: 'SET_IS_TYPING', payload: false });
         }
@@ -380,18 +379,6 @@ export function useGame() {
         dispatch({ type: 'NEXT_FIGURE' });
     }, []);
 
-    // Toggle between classic and LLM mode
-    const handleModeToggle = useCallback(() => {
-        if (isLLMConfigured()) {
-            dispatch({ type: 'SET_LLM_MODE', payload: !llmMode });
-        } else {
-            dispatch({
-                type: 'SET_FEEDBACK',
-                payload: { message: 'Please configure your API key in .env.local (see LLM_SETUP.md) to use AI mode.', type: 'error' }
-            });
-        }
-    }, [llmMode]);
-
     // Restart game
     const restartGame = useCallback(() => {
         const enabledFigures = getEnabledFigures();
@@ -463,7 +450,6 @@ export function useGame() {
         handleAskQuestion,
         handleGuess,
         nextFigure,
-        handleModeToggle,
         restartGame,
         handleStartGame,
         handleShowDocs,

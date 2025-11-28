@@ -101,10 +101,10 @@ export default function DocumentationModal({ isVisible, onClose, llmMode }: Docu
           </section>
 
           <section className="docs-section">
-            <h3>Switching Modes</h3>
+            <h3>Game Modes</h3>
             <p>
-              Click the mode button in the top right to switch between AI Mode and Classic Mode.
-              You can switch at any time, even mid-game!
+              The game mode (AI or Classic) is configured via environment variables before starting.
+              To switch modes, update your <code>.env.local</code> file and restart the dev server.
             </p>
           </section>
 

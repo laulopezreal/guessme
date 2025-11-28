@@ -169,27 +169,6 @@ describe('gameReducer', () => {
         });
     });
 
-    describe('SET_LLM_MODE', () => {
-        it('should enable LLM mode', () => {
-            const newState = gameReducer(state, {
-                type: 'SET_LLM_MODE',
-                payload: true,
-            });
-
-            expect(newState.llmMode).toBe(true);
-        });
-
-        it('should disable LLM mode', () => {
-            const stateWithLLM: GameState = { ...state, llmMode: true };
-            const newState = gameReducer(stateWithLLM, {
-                type: 'SET_LLM_MODE',
-                payload: false,
-            });
-
-            expect(newState.llmMode).toBe(false);
-        });
-    });
-
     describe('TOGGLE_DOCS', () => {
         it('should show documentation', () => {
             const newState = gameReducer(state, {

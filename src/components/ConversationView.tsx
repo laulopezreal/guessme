@@ -1,4 +1,3 @@
-import { useEffect, useRef } from 'react';
 import type { Message } from '../types';
 
 interface ConversationViewProps {
@@ -20,13 +19,6 @@ export default function ConversationView({
   onResetConversation,
   canResetConversation = true,
 }: ConversationViewProps) {
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  // Auto-scroll to bottom when new messages arrive
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isTyping]);
-
   // Show all messages including system messages
   const visibleMessages = messages;
   const nearLimit = remainingQuestions <= warningThreshold;
@@ -99,8 +91,6 @@ export default function ConversationView({
             </div>
           </div>
         )}
-        
-        <div ref={messagesEndRef} />
       </div>
     </div>
   );

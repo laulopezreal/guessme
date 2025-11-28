@@ -3,7 +3,7 @@ import type { HistoricFigure } from '../types';
 export const historicFigures: HistoricFigure[] = [
   {
     name: "Albert Einstein",
-    alternateNames: ["einstein", "albert"],
+    alternateNames: ["einstein", "albert", "albert einstein"],
     eraTags: ["Modern Era", "Physics"],
     voiceLine: "Imagination will take you everywhere—ready for your next thought experiment?",
     clues: [
