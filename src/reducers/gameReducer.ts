@@ -102,6 +102,12 @@ export type GameAction =
         dayNumber: number;
         /** Set when today's puzzle was already finished: the round is restored as it ended. */
         priorResult?: { won: boolean; cluesUsed: number; score: number };
+        /** Set when today's round was left unfinished: the clues and misses so far. */
+        progress?: {
+          revealedClues: Array<Clue & { isAdaptive?: boolean }>;
+          consecutiveMisses: number;
+          adaptiveNotice?: string;
+        };
       };
     };
 
@@ -296,7 +302,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     }
 
     case 'START_DAILY': {
-      const { figure, dateKey, dayNumber, priorResult } = action.payload;
+      const { figure, dateKey, dayNumber, priorResult, progress } = action.payload;
       const fresh: GameState = {
         ...initialState,
         shuffledFigures: [figure],
@@ -306,7 +312,18 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         playKind: 'daily',
         daily: { dateKey, dayNumber },
       };
-      if (!priorResult) return fresh;
+      if (!priorResult) {
+        // Left unfinished earlier today: pick up with the same clues and misses.
+        if (progress && progress.revealedClues.length > 0) {
+          return {
+            ...fresh,
+            revealedClues: progress.revealedClues,
+            consecutiveMisses: progress.consecutiveMisses,
+            adaptiveHintNotice: progress.adaptiveNotice ?? '',
+          };
+        }
+        return fresh;
+      }
 
       // Already played today: show the round as it ended, with no way to play it again.
       const cluesUsed = Math.min(Math.max(priorResult.cluesUsed, 1), figure.clues.length);

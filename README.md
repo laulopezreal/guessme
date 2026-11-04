@@ -44,6 +44,7 @@ One figure per UTC calendar day, the same for everyone, played under Classic rul
 - The figure is chosen deterministically from the enabled roster by `selectDailyFigure` in `src/utils/gameUtils.ts`: days are grouped into cycles as long as the roster, each cycle is a seeded shuffle, so no figure repeats until every other one has had its day. No server is involved, so every device agrees. Puzzle #1 is `DAILY_EPOCH` (2026-11-04).
 - When the round ends you get a result panel with a Wordle-style grid (one square per clue revealed, a tick for a solve or a cross for a give-up), the score, the puzzle number and the site URL. **Share** uses the Web Share sheet where the browser has one, **Copy result** uses the clipboard, and if both are blocked the text appears in a box to copy by hand.
 - Stats live in `localStorage` under the versioned key `guessme:daily-stats:v1`: games played, win rate, current and best streak, and how many clues your wins needed. Open them from the header or the result panel.
+- An unfinished round is saved in the browser too (`guessme:daily-progress:v1`), so a reload or a detour into practice resumes it with the same clues and misses.
 - A finished puzzle cannot be replayed: reopening it shows the result and a countdown to the next puzzle at midnight UTC.
 
 The game includes diverse historic figures from science, arts, politics, and culture.

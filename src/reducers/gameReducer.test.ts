@@ -749,6 +749,47 @@ describe('gameReducer', () => {
             expect(newState.score).toBe(0);
             expect(newState.feedbackType).toBe('error');
         });
+
+        it('should resume an unfinished round with its clues and misses', () => {
+            const newState = gameReducer(state, {
+                type: 'START_DAILY',
+                payload: {
+                    figure,
+                    dateKey: '2026-11-04',
+                    dayNumber: 1,
+                    progress: {
+                        revealedClues: [figure.clues[0], { ...figure.clues[1], isAdaptive: true }],
+                        consecutiveMisses: 2,
+                        adaptiveNotice: 'Adaptive hint given',
+                    },
+                },
+            });
+
+            expect(newState.roundOutcome).toBeNull();
+            expect(newState.revealedClues).toHaveLength(2);
+            expect(newState.revealedClues[1].isAdaptive).toBe(true);
+            expect(newState.consecutiveMisses).toBe(2);
+            expect(newState.adaptiveHintNotice).toBe('Adaptive hint given');
+            expect(newState.inputDisabled).toBe(false);
+            expect(newState.score).toBe(0);
+        });
+
+        it('should prefer a finished result over saved progress', () => {
+            const newState = gameReducer(state, {
+                type: 'START_DAILY',
+                payload: {
+                    figure,
+                    dateKey: '2026-11-04',
+                    dayNumber: 1,
+                    priorResult: { won: true, cluesUsed: 1, score: 100 },
+                    progress: { revealedClues: figure.clues, consecutiveMisses: 3 },
+                },
+            });
+
+            expect(newState.roundOutcome).toBe('won');
+            expect(newState.revealedClues).toHaveLength(1);
+            expect(newState.consecutiveMisses).toBe(0);
+        });
     });
 
     describe('round outcome', () => {

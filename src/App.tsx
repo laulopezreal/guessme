@@ -14,7 +14,6 @@ import Footer from './components/Footer';
 import { useGame } from './hooks/useGame';
 import { calculatePoints, classicScoreWeights, dailyNumber, llmScoreWeights, type ScoreBreakdown } from './utils/gameUtils';
 import type { GameMode } from './services/gameMode';
-import type { PlayKind } from './types';
 import './App.css';
 
 const WARNING_THRESHOLD = 3;
@@ -22,7 +21,7 @@ const WARNING_THRESHOLD = 3;
 function App() {
   const [showGiveUpConfirm, setShowGiveUpConfirm] = useState(false);
   const [pendingMode, setPendingMode] = useState<GameMode | null>(null);
-  const [pendingKind, setPendingKind] = useState<PlayKind | null>(null);
+  const [confirmDaily, setConfirmDaily] = useState(false);
   const [showStats, setShowStats] = useState(false);
 
   const {
@@ -58,6 +57,7 @@ function App() {
     dailyStats,
     todayKey,
     todayResult,
+    dailyInProgress,
 
     // Actions
     revealNextClue,
@@ -151,28 +151,20 @@ function App() {
     setPendingMode(null);
   };
 
-  // Moving between the daily puzzle and practice abandons a game in progress, so ask first.
-  const switchKind = (kind: PlayKind) => {
-    if (kind === 'daily') startDaily();
-    else startPractice();
-  };
-
-  const requestKind = (kind: PlayKind) => {
-    const inProgress = !showWelcome && !gameEnded && (isDaily ? !roundOutcome : true);
-    if (inProgress) {
-      setPendingKind(kind);
+  // Opening the daily puzzle abandons a practice game, so ask first. Leaving the daily
+  // puzzle loses nothing: an unfinished round is saved and resumes next time.
+  const requestDaily = () => {
+    const practiceInProgress = !isDaily && !showWelcome && !gameEnded;
+    if (practiceInProgress) {
+      setConfirmDaily(true);
     } else {
-      switchKind(kind);
+      startDaily();
     }
   };
 
-  const handleConfirmKind = () => {
-    if (pendingKind) switchKind(pendingKind);
-    setPendingKind(null);
-  };
-
-  const handleCancelKind = () => {
-    setPendingKind(null);
+  const handleConfirmDaily = () => {
+    setConfirmDaily(false);
+    startDaily();
   };
 
   const siteUrl = window.location.origin;
@@ -189,7 +181,7 @@ function App() {
         isDaily={isDaily}
         onShowDocs={handleShowDocs}
         onShowStats={() => setShowStats(true)}
-        onSwitchKind={() => requestKind(isDaily ? 'practice' : 'daily')}
+        onSwitchKind={isDaily ? startPractice : requestDaily}
         onToggleMode={() => requestMode(llmMode ? 'classic' : 'ai')}
       />
       <div className="character-and-score">
@@ -285,6 +277,7 @@ function App() {
         onStartDaily={startDaily}
         dailyNumber={dailyNumber(todayKey)}
         dailyPlayed={Boolean(todayResult)}
+        dailyInProgress={dailyInProgress}
         llmMode={llmMode}
         aiAvailable={aiAvailable}
         onSelectMode={setMode}
@@ -348,22 +341,18 @@ function App() {
         </div>
       )}
 
-      {pendingKind && (
+      {confirmDaily && (
         <div className="modal">
           <div className="modal-content confirm-modal">
-            <h2 className="modal-title">
-              {pendingKind === 'daily' ? "Open today's puzzle?" : 'Back to practice?'}
-            </h2>
+            <h2 className="modal-title">Open today's puzzle?</h2>
             <p className="modal-text">
-              {pendingKind === 'daily'
-                ? 'Your practice game will start over when you come back to it.'
-                : "Today's puzzle starts over if you come back to it today, including the clues you have revealed."}
+              Your practice game will start over when you come back to it.
             </p>
             <div className="confirm-actions">
-              <button className="modal-btn" onClick={handleConfirmKind}>
-                {pendingKind === 'daily' ? 'Play the daily' : 'Go to practice'}
+              <button className="modal-btn" onClick={handleConfirmDaily}>
+                Play the daily
               </button>
-              <button className="modal-btn modal-btn-secondary" onClick={handleCancelKind}>
+              <button className="modal-btn modal-btn-secondary" onClick={() => setConfirmDaily(false)}>
                 Keep playing
               </button>
             </div>

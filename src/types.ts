@@ -69,3 +69,11 @@ export interface DailyStats {
 
 /** How a daily result left the app: the Web Share sheet, the clipboard, or a text box the player copies from. */
 export type ShareMethod = 'share' | 'clipboard' | 'manual';
+
+/** An unfinished daily round, saved so a reload or a detour into practice picks it up again. */
+export interface DailyProgress {
+  version: 1;
+  dateKey: string;
+  revealed: Array<{ text: string; adaptive: boolean }>;
+  misses: number;
+}

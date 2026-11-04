@@ -70,7 +70,7 @@ npm test             # Vitest in watch mode
 npx vitest run       # Single pass
 ```
 
-Suites: `src/reducers/gameReducer.test.ts` (state transitions, including the daily puzzle), `src/utils/gameUtils.test.ts` (daily figure selection, share text), `src/services/dailyStats.test.ts` (streaks and localStorage), `src/data/figuresConfig.test.ts` (roster integrity, guess tokens), `worker/index.test.ts` (the proxy against a mocked OpenAI endpoint).
+Suites: `src/reducers/gameReducer.test.ts` (state transitions, including the daily puzzle), `src/utils/gameUtils.test.ts` (daily figure selection, share text), `src/services/dailyStats.test.ts` and `src/services/dailyProgress.test.ts` (streaks, resume, localStorage), `src/data/figuresConfig.test.ts` (roster integrity, guess tokens), `worker/index.test.ts` (the proxy against a mocked OpenAI endpoint).
 
 ## Code Architecture
 
@@ -113,7 +113,7 @@ guessme/
 - `gameReducer.ts` owns all state; `useGame.ts` wraps it with async actions (AI calls) and analytics events
 - `llmMode` is runtime state. `SET_MODE` switches before a game starts; `RESTART_GAME` with a `mode` switches mid-game (a switch restarts because scoring differs)
 - `aiStatus` comes from `GET /api/ai/status`; `SET_AI_STATUS` with `available: false` forces Classic Mode and explains why
-- `playKind` is `practice` or `daily`. `START_DAILY` loads the one figure for today (`selectDailyFigure` in `gameUtils.ts`) and, when today is already finished, restores the round as it ended; the hook derives `llmMode` as false while daily runs so Classic rules apply. Stats are kept by `services/dailyStats.ts`
+- `playKind` is `practice` or `daily`. `START_DAILY` loads the one figure for today (`selectDailyFigure` in `gameUtils.ts`) and, when today is already finished, restores the round as it ended; the hook derives `llmMode` as false while daily runs so Classic rules apply. Stats are kept by `services/dailyStats.ts` and an unfinished round by `services/dailyProgress.ts`, both under versioned localStorage keys
 
 **AI proxy contract (`src/services/llmPrompts.ts`):**
 - `POST /api/ai/chat` with `{ op: 'greeting' | 'message' | 'validate', figureId, ... }`

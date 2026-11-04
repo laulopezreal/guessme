@@ -4,12 +4,14 @@ import { calculatePoints, shuffleArray, selectNextClue, llmScoreWeights, isClose
 import { AiRequestError, describeAiError, fetchAiStatus, getInitialGreeting, sendMessage, validateGuess } from '../services/llmService';
 import { rememberGameMode, type GameMode } from '../services/gameMode';
 import { getDailyResult, loadDailyStats, recordDailyResult, saveDailyStats } from '../services/dailyStats';
+import { clearDailyProgress, loadDailyProgress, saveDailyProgress } from '../services/dailyProgress';
 import { track } from '../services/analytics';
 import type { Message, HistoricFigure, Clue, DailyRecord, ShareMethod } from '../types';
 import { gameReducer, initialState } from '../reducers/gameReducer';
 
 const MISS_THRESHOLD = 2;
 const QUESTION_LIMIT = 15;
+const ADAPTIVE_HINT_NOTICE = 'An adaptive hint was provided after repeated misses. Future points will factor this in.';
 
 export function useGame() {
     const [state, dispatch] = useReducer(gameReducer, initialState);
@@ -56,6 +58,8 @@ export function useGame() {
     const [dailyStats, setDailyStats] = useState(loadDailyStats);
     const [todayKey, setTodayKey] = useState(() => utcDateKey(new Date()));
     const todayResult = getDailyResult(dailyStats, todayKey);
+    // Whether an unfinished round was waiting when the app loaded; the welcome modal offers to resume it.
+    const [dailyInProgress] = useState(() => loadDailyProgress(todayKey) !== null);
 
     // Name fragments used by the input to spot guesses typed as questions.
     const guessTokens = useMemo(() => getFigureNameTokens(shuffledFigures), [shuffledFigures]);
@@ -172,6 +176,17 @@ export function useGame() {
         }
     }, [currentFigure, revealedClues.length]);
 
+    // Keep an unfinished daily round in storage so a reload or a detour into practice resumes it.
+    useEffect(() => {
+        if (!isDaily || !daily || roundOutcome || revealedClues.length === 0) return;
+        saveDailyProgress({
+            version: 1,
+            dateKey: daily.dateKey,
+            revealed: revealedClues.map(clue => ({ text: clue.text, adaptive: Boolean(clue.isAdaptive) })),
+            misses: consecutiveMisses,
+        });
+    }, [consecutiveMisses, daily, isDaily, revealedClues, roundOutcome]);
+
     const revealNextClue = useCallback((misses = consecutiveMisses) => {
         if (!currentFigure) return;
 
@@ -181,7 +196,7 @@ export function useGame() {
 
         dispatch({
             type: 'REVEAL_CLUE',
-            payload: { clue: nextClue, isAdaptive: adaptive, adaptiveNotice: adaptive ? 'An adaptive hint was provided after repeated misses. Future points will factor this in.' : undefined }
+            payload: { clue: nextClue, isAdaptive: adaptive, adaptiveNotice: adaptive ? ADAPTIVE_HINT_NOTICE : undefined }
         });
         track('clue_revealed', { mode, index: revealedClues.length + 1, adaptive });
     }, [consecutiveMisses, currentFigure, mode, revealedClues]);
@@ -270,6 +285,7 @@ export function useGame() {
         if (next === dailyStats) return;
         setDailyStats(next);
         saveDailyStats(next);
+        clearDailyProgress();
         track('daily_completed', { won, clues_used: cluesUsed, score: roundScore });
     }, [currentFigure, daily, dailyStats]);
 
@@ -538,6 +554,15 @@ export function useGame() {
         if (!puzzle) return;
         setTodayKey(puzzle.dateKey);
         const prior = getDailyResult(dailyStats, puzzle.dateKey);
+
+        // An unfinished round from earlier today resumes. Clue texts are matched against the
+        // figure, so an edited roster cannot resurrect clues that no longer exist.
+        const saved = prior ? null : loadDailyProgress(puzzle.dateKey);
+        const revealedClues = (saved?.revealed ?? []).flatMap(entry => {
+            const clue = puzzle.figure.clues.find(candidate => candidate.text === entry.text);
+            return clue ? [{ ...clue, isAdaptive: entry.adaptive }] : [];
+        });
+
         dispatch({
             type: 'START_DAILY',
             payload: {
@@ -545,9 +570,16 @@ export function useGame() {
                 dateKey: puzzle.dateKey,
                 dayNumber: puzzle.dayNumber,
                 priorResult: prior ? { won: prior.won, cluesUsed: prior.cluesUsed, score: prior.score } : undefined,
+                progress: saved
+                    ? {
+                        revealedClues,
+                        consecutiveMisses: saved.misses,
+                        adaptiveNotice: revealedClues.some(clue => clue.isAdaptive) ? ADAPTIVE_HINT_NOTICE : undefined,
+                    }
+                    : undefined,
             },
         });
-        if (!prior) track('daily_started', { day: puzzle.dayNumber });
+        if (!prior) track('daily_started', { day: puzzle.dayNumber, resumed: revealedClues.length > 0 });
     }, [dailyStats]);
 
     // Back to the endless practice game, in the mode the player had chosen.
@@ -598,6 +630,7 @@ export function useGame() {
         dailyStats,
         todayKey,
         todayResult,
+        dailyInProgress,
 
         // Actions
         revealNextClue,

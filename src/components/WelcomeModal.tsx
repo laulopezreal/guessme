@@ -9,6 +9,8 @@ interface WelcomeModalProps {
   dailyNumber: number;
   /** True once today's puzzle is finished: the Daily choice then opens the result. */
   dailyPlayed: boolean;
+  /** True when an unfinished round from earlier today is waiting to be resumed. */
+  dailyInProgress: boolean;
   llmMode: boolean;
   aiAvailable: boolean;
   onSelectMode: (mode: GameMode) => void;
@@ -20,6 +22,7 @@ export default function WelcomeModal({
   onStartDaily,
   dailyNumber,
   dailyPlayed,
+  dailyInProgress,
   llmMode,
   aiAvailable,
   onSelectMode,
@@ -91,6 +94,7 @@ export default function WelcomeModal({
                 <li>Classic rules: read the clues, reveal more if you need them, guess when you know</li>
                 <li>One attempt a day, then share your result and keep your streak going</li>
                 {dailyPlayed && <li>You have finished today's puzzle: open it to see your result and the countdown</li>}
+                {!dailyPlayed && dailyInProgress && <li>You left today's puzzle unfinished: pick it up where you stopped</li>}
               </ul>
             </div>
           ) : llmMode ? (
@@ -132,7 +136,13 @@ export default function WelcomeModal({
         </div>
 
         <button className="modal-btn start-btn" onClick={dailySelected ? onStartDaily : onStart}>
-          {dailySelected ? (dailyPlayed ? "See today's result" : "Play today's puzzle") : 'Start Playing'}
+          {dailySelected
+            ? dailyPlayed
+              ? "See today's result"
+              : dailyInProgress
+                ? "Resume today's puzzle"
+                : "Play today's puzzle"
+            : 'Start Playing'}
         </button>
       </div>
     </div>
