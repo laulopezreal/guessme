@@ -1,0 +1,43 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "guessme",
+  "main": "./worker/index.ts",
+  "compatibility_date": "2026-11-01",
+  "upload_source_maps": true,
+
+  // The Vite plugin serves the client build as static assets. Only /api/*
+  // reaches the Worker; every other path is a static asset or the SPA shell.
+  "assets": {
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+
+  // Non-secret configuration. Override per environment if needed.
+  "vars": {
+    "OPENAI_MODEL": "gpt-4o-mini",
+    "OPENAI_BASE_URL": "https://api.openai.com/v1"
+  },
+
+  // Set with `npx wrangler secret put OPENAI_API_KEY` for production and
+  // OPENAI_API_KEY=... in .env.local for local development. Deploys fail
+  // until the secret exists.
+  "secrets": {
+    "required": ["OPENAI_API_KEY"]
+  },
+
+  // Per-IP burst protection for the AI proxy. Limits are approximate and
+  // per Cloudflare location; the OpenAI spend cap is the hard backstop.
+  "ratelimits": [
+    {
+      "name": "AI_RATE_LIMITER",
+      "namespace_id": "1001",
+      "simple": { "limit": 30, "period": 60 }
+    }
+  ],
+
+  "observability": {
+    "enabled": true,
+    "logs": { "enabled": true, "head_sampling_rate": 1 },
+    "traces": { "enabled": true, "head_sampling_rate": 0.1 }
+  }
+}

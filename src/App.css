@@ -1357,3 +1357,27 @@ body {
         grid-template-columns: 1fr;
     }
 }
+/* ========================================
+   Runtime mode switching
+   ======================================== */
+
+.toggle-box:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.toggle-container:active .toggle-box:disabled {
+    transform: none;
+}
+
+.welcome-mode-picker {
+    margin-bottom: var(--spacing-xs);
+}
+
+.mode-note {
+    font-size: var(--font-size-xs);
+    text-align: center;
+    color: var(--navy);
+    opacity: 0.8;
+    margin-bottom: var(--spacing-md);
+}

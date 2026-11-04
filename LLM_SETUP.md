@@ -1,122 +1,75 @@
-# LLM Integration Setup
+# AI Mode Setup
 
-This guide walks you through setting up the LLM integration for interactive gameplay.
+AI Mode lets players interrogate a historic figure who answers in character. The model calls run in a Cloudflare Worker (`worker/index.ts`), never in the browser, so the OpenAI key is a server-side secret.
 
-## ✅ Step 1: Install Dependencies (COMPLETED)
+## How requests flow
 
-The OpenAI SDK has been installed:
-```bash
-npm install openai
+```
+Browser (src/services/llmService.ts)
+   │  POST /api/ai/chat { op, figureId, history, hintLevel | guess }
+   ▼
+Cloudflare Worker (worker/index.ts)
+   │  checks key, same-origin header and per-IP rate limit
+   │  builds prompts from src/data/figuresConfig.ts + src/services/llmPrompts.ts
+   ▼
+OpenAI chat completions (model and base URL from wrangler.jsonc "vars")
 ```
 
-## 🔑 Step 2: Configure Your API Key
+Operations:
 
-1. **Get an OpenAI API Key**
-   - Visit https://platform.openai.com/api-keys
-   - Create a new API key (keep it secret!)
+| `op` | Purpose | Response |
+|---|---|---|
+| `greeting` | Opening line plus a two-line poem | `{ op, content }` |
+| `message` | One conversational turn, history trimmed to the last 12 messages | `{ op, content }` |
+| `validate` | Grade a guess, JSON-only answer with exact-match fallback | `{ op, result: { isCorrect, confidence, feedback } }` |
 
-2. **Configure `.env.local`**
-   - Copy `.env.example` to `.env.local` if you haven't already:
-   ```bash
-   cp .env.example .env.local
-   ```
-   - Edit `.env.local` and update these values:
-   ```
-   VITE_GAME_MODE=ai
-   VITE_LLM_API_KEY=sk-proj-your-actual-key-here
-   VITE_LLM_MODEL=gpt-4o-mini
-   ```
+`GET /api/ai/status` returns `{ available, model }` so the app can disable the AI toggle when no key is configured.
 
-3. **Restart the dev server**
-   - If the dev server is running, stop it (Ctrl+C) and start again
-   - This loads the new environment variables
+Errors come back as `{ error }` with a status code: `503 ai_unavailable`, `429 rate_limited`, `400` for bad input, `502 upstream_error`.
 
-## 🧪 Step 3: Test the Integration
+## Local development
 
-1. **Start the dev server**
-  ```bash
-  npm run dev
+1. Get an OpenAI API key from https://platform.openai.com/api-keys and set a monthly spend limit on the account.
+2. Copy `.env.example` to `.env.local` and set `OPENAI_API_KEY`. The file is gitignored.
+3. Run `npm run dev`. The Cloudflare Vite plugin runs the Worker locally and passes `OPENAI_API_KEY` from `.env.local` to it. The browser bundle never sees it: only keys prefixed `VITE_` reach the client.
+4. Open the game. The header shows the mode toggle; pick AI Mode on the welcome screen or flip the toggle.
 
-2. **Open the test page (optional)**
-- Navigate to `http://localhost:5173/test-llm.html`
-- Click the test buttons in order (1 → 2 → 3 → 4)
-- Each test should show a green success message
+Without a key, `/api/ai/status` reports `available: false`, the toggle is disabled and the game runs in Classic Mode. If you set `VITE_GAME_MODE=ai` the app still falls back to Classic Mode in that case and tells the player why.
 
-3. **Try AI Mode in the actual game**
-- Make sure `VITE_GAME_MODE=ai` is set in `.env.local`
-- Restart the dev server if it's already running
-- Open `http://localhost:5173/`
-- The game should start in AI Mode (you'll see "Mode: AI" in the header)
-- Ask a few questions and submit a guess to confirm scoring and validation work as expected
+## Production
 
-**Note**: To switch back to Classic Mode, set `VITE_GAME_MODE=classic` in `.env.local` and restart the server.
+```bash
+npx wrangler login
+npx wrangler secret put OPENAI_API_KEY   # prompts for the value, never pass it as an argument
+npm run deploy                           # builds, then wrangler deploy
+```
 
-## 📁 What Was Created
+`wrangler.jsonc` declares `OPENAI_API_KEY` under `secrets.required`, so a deploy fails with a clear message until the secret exists.
 
-### `/src/services/llmService.ts`
-The core LLM service with functions:
-- `isLLMConfigured()` - Check if API key is set
-- `getInitialGreeting(figure)` - Get AI greeting from historic figure
-- `sendMessage(history, figure, hintLevel)` - Send question and get response
-- `validateGuess(guess, figure, history)` - Intelligent guess validation
+Non-secret settings live in `wrangler.jsonc`:
 
-### `/.env.example`
-Example environment variables file with documentation
+- `vars.OPENAI_MODEL`, default `gpt-4o-mini`
+- `vars.OPENAI_BASE_URL`, default `https://api.openai.com/v1`. Point it at a [Cloudflare AI Gateway](https://developers.cloudflare.com/ai-gateway/) URL to get request logs, caching and gateway-level rate limits without code changes.
+- `ratelimits`: 30 requests per minute per client IP for the AI endpoints. Limits are approximate and per Cloudflare location.
+- `observability`: Workers Logs and Traces are enabled; the Worker logs structured JSON on upstream failures.
 
-### `/.env.local`
-Your local environment variables for API configuration (gitignored for security)
+## Cost
 
-### `/test-llm.html`
-Interactive test page to verify everything works
+With `gpt-4o-mini` at $0.15 per 1M input tokens and $0.60 per 1M output tokens, a full 15-question round costs roughly $0.003 and a complete game under $0.02. The 15-question limit per conversation and the per-IP rate limit bound the cost per player; the OpenAI spend cap bounds the total.
 
-## 🎮 Current Integration
+## Testing
 
-Now that the LLM service is working, the interactive AI Mode is fully wired into the game:
+`npm test` runs `worker/index.test.ts`, which exercises the Worker against a mocked OpenAI endpoint: configuration checks, same-origin enforcement, rate limiting, input validation, history trimming, guess grading and upstream failures. The prompt builders are pure functions in `src/services/llmPrompts.ts`.
 
-1. **Data models** - `Message`, `ConversationState`, and related types live in `types.ts`
-2. **ConversationView component** - Chat interface with message bubbles and typing indicator
-3. **useGame hook + App.tsx** - Central game logic and UI wiring for Classic vs AI modes
-4. **Gameplay** - Static clues remain for Classic Mode; AI Mode uses the LLM for greetings, hints, and guess validation
+## Troubleshooting
 
-## 💰 Cost Considerations
+**AI toggle is disabled**
+- Check `.env.local` contains `OPENAI_API_KEY` and restart `npm run dev`
+- In production, confirm the secret exists: `npx wrangler secret list`
 
-**gpt-4o-mini pricing (as of 2024):**
-- Input: ~$0.15 per 1M tokens
-- Output: ~$0.60 per 1M tokens
+**"The AI did not answer"**
+- Check the Worker logs (`npx wrangler tail` or the Cloudflare dashboard) for the upstream status code
+- Verify the OpenAI account has credit
 
-**Estimated cost per game:**
-- ~10-15 questions per figure
-- ~200-300 tokens per interaction
-- **~$0.01-0.02 per complete game**
-
-Very affordable for development and small-scale usage!
-
-## 🔒 Security Notes
-
-- `.env.local` is gitignored - never commit API keys
-- `dangerouslyAllowBrowser: true` is used for development
-- **For production**: Build a backend proxy to hide the API key
-- Set spending limits in your OpenAI account
-
-## 🐛 Troubleshooting
-
-**"Failed to get response from AI"**
-- Check your API key is correct in `.env.local`
-- Verify you have credits in your OpenAI account
-- Check browser console for detailed errors
-
-**Environment variables not loading**
-- Restart the dev server after changing `.env.local`
-- Make sure filename is exactly `.env.local` (not `.env.local.txt`)
-- Vite only loads env vars starting with `VITE_`
-
-**CORS errors**
-- This is expected when calling OpenAI directly from browser
-- OpenAI allows browser requests, so this should work
-- If persistent, consider using a backend proxy
-
-## 📚 References
-
-- [OpenAI API Documentation](https://platform.openai.com/docs)
-- [Vite Environment Variables](https://vitejs.dev/guide/env-and-mode.html)
-- Project plan: See the "LLM-Powered Interactive Gameplay" plan document
+**"You are asking faster than the AI can keep up"**
+- The per-IP rate limit was hit. Adjust `ratelimits` in `wrangler.jsonc` if the limit is too tight for shared networks.

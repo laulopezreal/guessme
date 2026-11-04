@@ -2,9 +2,9 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { gameReducer, initialState, type GameState } from '../reducers/gameReducer';
 import type { HistoricFigure, Clue, Message } from '../types';
 
-// Mock the llmService
-vi.mock('../services/llmService', () => ({
-    isLLMConfigured: vi.fn(() => false),
+// The reducer reads the default mode from gameMode.ts; pin it for the tests.
+vi.mock('../services/gameMode', () => ({
+    getDefaultGameMode: vi.fn(() => 'classic'),
 }));
 
 describe('gameReducer', () => {
@@ -622,6 +622,59 @@ describe('gameReducer', () => {
             expect(newState.consecutiveMisses).toBe(0);
             expect(newState.adaptiveHintNotice).toBe('');
             expect(newState.outOfQuestions).toBe(false);
+        });
+    });
+    describe('SET_MODE', () => {
+        it('should switch to AI mode and clear the conversation', () => {
+            const dirtyState: GameState = {
+                ...state,
+                messages: [{ id: 'm1', role: 'assistant', content: 'Hi', timestamp: 1 }],
+                questionsAsked: 3,
+                outOfQuestions: true,
+            };
+
+            const newState = gameReducer(dirtyState, { type: 'SET_MODE', payload: { mode: 'ai' } });
+
+            expect(newState.llmMode).toBe(true);
+            expect(newState.messages).toEqual([]);
+            expect(newState.questionsAsked).toBe(0);
+            expect(newState.outOfQuestions).toBe(false);
+        });
+    });
+
+    describe('SET_AI_STATUS', () => {
+        it('should record availability without touching the mode', () => {
+            const newState = gameReducer({ ...state, llmMode: false }, {
+                type: 'SET_AI_STATUS',
+                payload: { available: true },
+            });
+
+            expect(newState.aiStatus).toBe('available');
+            expect(newState.llmMode).toBe(false);
+        });
+
+        it('should fall back to Classic when AI mode is selected but unavailable', () => {
+            const newState = gameReducer({ ...state, llmMode: true }, {
+                type: 'SET_AI_STATUS',
+                payload: { available: false },
+            });
+
+            expect(newState.aiStatus).toBe('unavailable');
+            expect(newState.llmMode).toBe(false);
+            expect(newState.feedbackType).toBe('error');
+        });
+    });
+
+    describe('RESTART_GAME with a mode', () => {
+        it('should apply the requested mode and keep the AI status', () => {
+            const newState = gameReducer({ ...state, llmMode: false, aiStatus: 'available' }, {
+                type: 'RESTART_GAME',
+                payload: { figures: mockFigures, mode: 'ai' },
+            });
+
+            expect(newState.llmMode).toBe(true);
+            expect(newState.aiStatus).toBe('available');
+            expect(newState.round).toBe(1);
         });
     });
 });

@@ -1,20 +1,50 @@
+import type { GameMode } from '../services/gameMode';
+
 interface WelcomeModalProps {
   isVisible: boolean;
   onStart: () => void;
   llmMode: boolean;
+  aiAvailable: boolean;
+  onSelectMode: (mode: GameMode) => void;
 }
 
-export default function WelcomeModal({ isVisible, onStart, llmMode }: WelcomeModalProps) {
+export default function WelcomeModal({ isVisible, onStart, llmMode, aiAvailable, onSelectMode }: WelcomeModalProps) {
   if (!isVisible) return null;
 
   return (
     <div className="modal">
       <div className="modal-content welcome-modal">
         <h2 className="modal-title">Welcome to Who Am I?</h2>
-        
+
         <div className="welcome-content">
           <p className="welcome-intro">
             Guess historic figures by learning about them through clues or conversation!
+          </p>
+
+          <div className="mode-toggle welcome-mode-picker" role="group" aria-label="Choose a game mode">
+            <button
+              type="button"
+              className={`mode-btn ${!llmMode ? 'active' : ''}`}
+              aria-pressed={!llmMode}
+              onClick={() => onSelectMode('classic')}
+            >
+              Classic Mode
+            </button>
+            <button
+              type="button"
+              className={`mode-btn ${llmMode ? 'active' : ''}`}
+              aria-pressed={llmMode}
+              disabled={!aiAvailable}
+              title={aiAvailable ? undefined : 'AI mode is unavailable right now'}
+              onClick={() => onSelectMode('ai')}
+            >
+              AI Mode
+            </button>
+          </div>
+          <p className="mode-note">
+            {aiAvailable
+              ? 'You can switch modes later from the header. Switching mid-game starts a new game.'
+              : 'AI mode is unavailable right now, so Classic mode is selected.'}
           </p>
 
           {llmMode ? (

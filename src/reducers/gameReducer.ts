@@ -1,5 +1,5 @@
 import type { HistoricFigure, Clue, Message } from '../types';
-import { getGameMode } from '../services/llmService';
+import { getDefaultGameMode, type GameMode } from '../services/gameMode';
 import type { ScoreBreakdown } from '../utils/gameUtils';
 
 export interface GameState {
@@ -28,6 +28,7 @@ export interface GameState {
 
   // LLM State
   llmMode: boolean;
+  aiStatus: 'unknown' | 'available' | 'unavailable';
   messages: Message[];
   questionsAsked: number;
   isTyping: boolean;
@@ -56,7 +57,8 @@ export const initialState: GameState = {
   adaptiveHintNotice: '',
   showWelcome: true,
   showDocs: false,
-  llmMode: getGameMode() === 'ai',
+  llmMode: getDefaultGameMode() === 'ai',
+  aiStatus: 'unknown',
   messages: [],
   questionsAsked: 0,
   isTyping: false,
@@ -68,7 +70,9 @@ export const initialState: GameState = {
 export type GameAction =
   | { type: 'INIT_GAME'; payload: { figures: HistoricFigure[] } }
   | { type: 'START_GAME' }
-  | { type: 'RESTART_GAME'; payload: { figures: HistoricFigure[] } }
+  | { type: 'RESTART_GAME'; payload: { figures: HistoricFigure[]; mode?: GameMode } }
+  | { type: 'SET_MODE'; payload: { mode: GameMode } }
+  | { type: 'SET_AI_STATUS'; payload: { available: boolean } }
   | { type: 'NEXT_FIGURE' }
   | { type: 'TOGGLE_DOCS'; payload: boolean }
   | { type: 'REVEAL_CLUE'; payload: { clue: Clue; isAdaptive?: boolean; adaptiveNotice?: string } }
@@ -118,8 +122,40 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         ...initialState,
         shuffledFigures: action.payload.figures,
         showWelcome: false, // Don't show welcome modal on restart
-        llmMode: state.llmMode, // Preserve LLM mode preference
+        llmMode: action.payload.mode ? action.payload.mode === 'ai' : state.llmMode, // Keep the mode unless a switch was requested
+        aiStatus: state.aiStatus,
       };
+
+    case 'SET_MODE':
+      return {
+        ...state,
+        llmMode: action.payload.mode === 'ai',
+        messages: [],
+        questionsAsked: 0,
+        isTyping: false,
+        outOfQuestions: false,
+        feedbackMessage: '',
+        feedbackType: '',
+      };
+
+    case 'SET_AI_STATUS': {
+      const aiStatus = action.payload.available ? 'available' : 'unavailable';
+      if (action.payload.available || !state.llmMode) {
+        return { ...state, aiStatus };
+      }
+      // AI mode was selected but the server cannot serve it: fall back to Classic.
+      return {
+        ...state,
+        aiStatus,
+        llmMode: false,
+        messages: [],
+        questionsAsked: 0,
+        isTyping: false,
+        outOfQuestions: false,
+        feedbackMessage: 'AI mode is not available right now, so you are playing Classic mode.',
+        feedbackType: 'error',
+      };
+    }
 
     case 'NEXT_FIGURE': {
       const nextIndex = state.currentFigureIndex + 1;

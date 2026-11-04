@@ -6,10 +6,12 @@ This guide explains how to add, edit, or remove historic figures from the game.
 
 All figures are managed in: **`src/data/figuresConfig.ts`**
 
+This file is shared with the Cloudflare Worker that powers AI Mode, so it must stay free of browser-only and Node-only code. The Worker looks figures up by `figureId(name)`, a slug derived from the name (for example `albert-einstein`), so keep names unique.
+
 ## Current Status
 
-- **Enabled Figures**: 5 (for testing/development)
-- **Total Figures**: 10 (5 additional disabled)
+- **Enabled Figures**: 10
+- **Total Figures**: 10
 
 ## Adding a New Figure
 
@@ -21,15 +23,19 @@ All figures are managed in: **`src/data/figuresConfig.ts`**
   enabled: true,  // Set to true when ready to use
   name: "Full Name",
   alternateNames: ["alternate1", "nickname"],
+  eraTags: ["Era", "Field"],              // optional, shown under the silhouette
+  voiceLine: "A short in-character line.", // optional, shown after a correct guess
   clues: [
-    "Clue 1 - Most vague",
-    "Clue 2 - Still vague",
-    "Clue 3 - Getting more specific",
-    "Clue 4 - Very specific",
-    "Clue 5 - Almost gives it away"
+    { text: "Clue 1 - Most vague", difficulty: 'hard' },
+    { text: "Clue 2 - Still vague", difficulty: 'medium' },
+    { text: "Clue 3 - Getting more specific", difficulty: 'medium' },
+    { text: "Clue 4 - Very specific", difficulty: 'easy' },
+    { text: "Clue 5 - Almost gives it away", difficulty: 'easy' }
   ]
 }
 ```
+
+The `difficulty` tag drives adaptive hints: after repeated misses the game reveals the easiest remaining clue first.
 
 ### Guidelines for Clues
 
@@ -43,11 +49,11 @@ All figures are managed in: **`src/data/figuresConfig.ts`**
 **Example - Good Clue Progression**:
 ```typescript
 clues: [
-  "I was born in Germany in 1879.",                    // When/where
-  "I won the Nobel Prize in Physics in 1921.",        // Recognition
-  "I developed the theory of relativity.",             // Major work
-  "My famous equation is E=mc².",                      // Specific detail
-  "I had distinctive wild white hair."                 // Unmistakable trait
+  { text: "I was born in Germany in 1879.", difficulty: 'hard' },              // When/where
+  { text: "I won the Nobel Prize in Physics in 1921.", difficulty: 'medium' }, // Recognition
+  { text: "I developed the theory of relativity.", difficulty: 'medium' },     // Major work
+  { text: "My famous equation is E=mc².", difficulty: 'easy' },                // Specific detail
+  { text: "I had distinctive wild white hair.", difficulty: 'easy' }           // Unmistakable trait
 ]
 ```
 
@@ -100,13 +106,13 @@ Delete the entire object from the array. **Warning**: This permanently removes t
    ```
 
 2. In the game:
-   - **Classic Mode**: Set `VITE_GAME_MODE=classic` in `.env.local`, restart server, and check that clues make sense and progress logically
-   - **AI Mode**: Set `VITE_GAME_MODE=ai` in `.env.local`, restart server, and test that the AI can accurately portray the figure
+   - **Classic Mode**: Use the header toggle, check that clues make sense and progress logically
+   - **AI Mode**: Flip the toggle (needs `OPENAI_API_KEY` in `.env.local`) and test that the AI can accurately portray the figure
    - **Guess Validation**: Try various name formats to ensure alternate names work
 
-3. Check the count:
-   - The game shows how many figures are enabled
-   - Should match your `enabled: true` count
+3. Run `npm test`:
+   - `src/data/figuresConfig.test.ts` checks every figure has exactly five clues and a unique id
+   - The "How to Play" overlay shows how many figures are enabled
 
 ## Best Practices
 
@@ -139,7 +145,7 @@ Delete the entire object from the array. **Warning**: This permanently removes t
 
 ### AI Mode Considerations
 
-When AI mode is enabled (via `VITE_GAME_MODE=ai` in `.env.local`), the AI uses your clues as reference material. Make sure:
+In AI Mode the Worker builds the figure's system prompt from your clues, so they double as the model's reference material. Make sure:
 - Clues contain factual, verifiable information
 - Information is rich enough for the AI to roleplay
 - Facts are from different aspects of the figure's life
@@ -151,16 +157,11 @@ When AI mode is enabled (via `VITE_GAME_MODE=ai` in `.env.local`), the AI uses y
 3. Leonardo da Vinci
 4. William Shakespeare
 5. Nikola Tesla
-
-## Available Disabled Figures
-
 6. Galileo Galilei
 7. Isaac Newton
 8. Napoleon Bonaparte
 9. Joan of Arc
 10. Queen Elizabeth I
-
-To enable more figures for production, change `enabled: false` to `enabled: true`.
 
 ## Function Reference
 
@@ -176,6 +177,12 @@ Returns:
 }
 ```
 
+### `figureId(name)`
+Returns the URL-safe id the browser sends to the AI API, e.g. `figureId("Joan of Arc")` is `"joan-of-arc"`.
+
+### `getFigureById(id)`
+Returns the enabled figure with that id, or `undefined`. Used by the Worker to build prompts.
+
 ## Troubleshooting
 
 **Figure not appearing in game?**
@@ -187,6 +194,7 @@ Returns:
 - Clues should be historically accurate
 - Include diverse information (not just achievements)
 - Test in Classic mode first to verify clues work
+- If the Worker answers `unknown_figure`, the figure is disabled or its name changed; the id is derived from the name
 
 **TypeScript errors?**
 - Ensure the structure matches the `HistoricFigure` interface

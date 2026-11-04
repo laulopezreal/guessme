@@ -1,3 +1,4 @@
+import { getFigureCount } from '../data/figuresConfig';
 interface DocumentationModalProps {
   isVisible: boolean;
   onClose: () => void;
@@ -5,6 +6,7 @@ interface DocumentationModalProps {
 }
 
 export default function DocumentationModal({ isVisible, onClose, llmMode }: DocumentationModalProps) {
+  const figureCount = getFigureCount().enabled;
   if (!isVisible) return null;
 
   return (
@@ -103,14 +105,15 @@ export default function DocumentationModal({ isVisible, onClose, llmMode }: Docu
           <section className="docs-section">
             <h3>Game Modes</h3>
             <p>
-              The game mode (AI or Classic) is configured via environment variables before starting.
-              To switch modes, update your <code>.env.local</code> file and restart the dev server.
+              Use the toggle in the header to switch between Classic and AI mode at any time.
+              The two modes score rounds differently, so switching mid-game starts a new game.
+              If the AI toggle is disabled, the server has no AI key configured.
             </p>
           </section>
 
           <section className="docs-section">
             <h3>Current Figures</h3>
-            <p>The game includes 5 historic figures:</p>
+            <p>The game includes {figureCount} historic figures:</p>
             <ul className="docs-list">
               <li>Scientists and inventors</li>
               <li>Artists and writers</li>
