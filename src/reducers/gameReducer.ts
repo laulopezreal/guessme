@@ -1,4 +1,4 @@
-import type { HistoricFigure, Clue, Message } from '../types';
+import type { HistoricFigure, Clue, Message, PlayKind, RoundOutcome } from '../types';
 import { getDefaultGameMode, type GameMode } from '../services/gameMode';
 import type { ScoreBreakdown } from '../utils/gameUtils';
 
@@ -37,6 +37,11 @@ export interface GameState {
   // Scoring summary
   lastRoundBreakdown: ScoreBreakdown | null;
   lastRoundNumber: number | null;
+
+  // Daily puzzle. Practice is the endless game; daily is one shared figure a day under Classic rules.
+  playKind: PlayKind;
+  daily: { dateKey: string; dayNumber: number } | null;
+  roundOutcome: RoundOutcome | null;
 }
 
 export const initialState: GameState = {
@@ -65,6 +70,9 @@ export const initialState: GameState = {
   outOfQuestions: false,
   lastRoundBreakdown: null,
   lastRoundNumber: null,
+  playKind: 'practice',
+  daily: null,
+  roundOutcome: null,
 };
 
 export type GameAction =
@@ -85,7 +93,17 @@ export type GameAction =
   | { type: 'SET_OUT_OF_QUESTIONS'; payload: boolean }
   | { type: 'RESET_CONVERSATION'; payload: { initialMessage?: Message } }
   | { type: 'SET_MESSAGES'; payload: Message[] }
-  | { type: 'GIVE_UP' };
+  | { type: 'GIVE_UP' }
+  | {
+      type: 'START_DAILY';
+      payload: {
+        figure: HistoricFigure;
+        dateKey: string;
+        dayNumber: number;
+        /** Set when today's puzzle was already finished: the round is restored as it ended. */
+        priorResult?: { won: boolean; cluesUsed: number; score: number };
+      };
+    };
 
 export function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
@@ -109,6 +127,9 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         questionsAsked: 0,
         adaptiveHintNotice: '',
         outOfQuestions: false,
+        playKind: 'practice',
+        daily: null,
+        roundOutcome: null,
       };
 
     case 'START_GAME':
@@ -178,6 +199,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         consecutiveMisses: 0,
         adaptiveHintNotice: '',
         outOfQuestions: false,
+        roundOutcome: null,
       };
     }
 
@@ -215,6 +237,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         outOfQuestions: false, // Reset this just in case
         lastRoundBreakdown: action.payload.breakdown ?? state.lastRoundBreakdown,
         lastRoundNumber: action.payload.breakdown ? state.round : state.lastRoundNumber,
+        roundOutcome: 'won',
       };
 
     case 'SET_FEEDBACK':
@@ -268,6 +291,37 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         consecutiveMisses: 0,
         adaptiveHintNotice: '',
         outOfQuestions: false,
+        roundOutcome: 'gave_up',
+      };
+    }
+
+    case 'START_DAILY': {
+      const { figure, dateKey, dayNumber, priorResult } = action.payload;
+      const fresh: GameState = {
+        ...initialState,
+        shuffledFigures: [figure],
+        showWelcome: false,
+        llmMode: state.llmMode, // The practice preference survives; the hook applies Classic rules while daily runs.
+        aiStatus: state.aiStatus,
+        playKind: 'daily',
+        daily: { dateKey, dayNumber },
+      };
+      if (!priorResult) return fresh;
+
+      // Already played today: show the round as it ended, with no way to play it again.
+      const cluesUsed = Math.min(Math.max(priorResult.cluesUsed, 1), figure.clues.length);
+      return {
+        ...fresh,
+        revealedClues: figure.clues.slice(0, cluesUsed),
+        score: priorResult.score,
+        isRevealed: true,
+        inputDisabled: true,
+        showNextButton: true,
+        roundOutcome: priorResult.won ? 'won' : 'gave_up',
+        feedbackMessage: priorResult.won
+          ? `You already solved today's puzzle: it was ${figure.name}. Come back tomorrow for a new one.`
+          : `You already played today's puzzle. The answer was ${figure.name}. Come back tomorrow for a new one.`,
+        feedbackType: priorResult.won ? 'success' : 'error',
       };
     }
 

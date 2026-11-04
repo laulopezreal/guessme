@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo, useReducer } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
 import { getEnabledFigures } from '../data/figuresConfig';
-import { calculatePoints, shuffleArray, selectNextClue, llmScoreWeights, isCloseMatch, getFigureNameTokens } from '../utils/gameUtils';
+import { calculatePoints, shuffleArray, selectNextClue, llmScoreWeights, isCloseMatch, getFigureNameTokens, getDailyPuzzle, utcDateKey } from '../utils/gameUtils';
 import { AiRequestError, describeAiError, fetchAiStatus, getInitialGreeting, sendMessage, validateGuess } from '../services/llmService';
 import { rememberGameMode, type GameMode } from '../services/gameMode';
+import { getDailyResult, loadDailyStats, recordDailyResult, saveDailyStats } from '../services/dailyStats';
 import { track } from '../services/analytics';
-import type { Message, HistoricFigure, Clue } from '../types';
+import type { Message, HistoricFigure, Clue, DailyRecord, ShareMethod } from '../types';
 import { gameReducer, initialState } from '../reducers/gameReducer';
 
 const MISS_THRESHOLD = 2;
@@ -31,7 +32,7 @@ export function useGame() {
         showNextButton,
         triggerShake,
         adaptiveHintNotice,
-        llmMode,
+        llmMode: preferredLlmMode,
         aiStatus,
         messages,
         questionsAsked,
@@ -39,11 +40,22 @@ export function useGame() {
         showWelcome,
         showDocs,
         outOfQuestions,
+        playKind,
+        daily,
+        roundOutcome,
     } = state;
 
     const currentFigure = shuffledFigures[currentFigureIndex];
+    const isDaily = playKind === 'daily';
+    // The daily puzzle always runs under Classic rules; the AI preference waits for practice.
+    const llmMode = preferredLlmMode && !isDaily;
     const mode: GameMode = llmMode ? 'ai' : 'classic';
     const aiAvailable = aiStatus !== 'unavailable';
+
+    // Daily puzzle stats live in localStorage. Today's key moves on when a new puzzle is opened.
+    const [dailyStats, setDailyStats] = useState(loadDailyStats);
+    const [todayKey, setTodayKey] = useState(() => utcDateKey(new Date()));
+    const todayResult = getDailyResult(dailyStats, todayKey);
 
     // Name fragments used by the input to spot guesses typed as questions.
     const guessTokens = useMemo(() => getFigureNameTokens(shuffledFigures), [shuffledFigures]);
@@ -241,6 +253,26 @@ export function useGame() {
         }
     }, [currentFigure, llmMode, messages, questionsAsked, reportAiFailure, round]);
 
+    // Store today's result once and report it. A finished puzzle is restored
+    // rather than replayed, and a second call for the same day is a no-op anyway.
+    const recordDaily = useCallback((won: boolean, cluesUsed: number, roundScore: number, misses: number) => {
+        if (!daily || !currentFigure) return;
+        const record: DailyRecord = {
+            dateKey: daily.dateKey,
+            dayNumber: daily.dayNumber,
+            won,
+            cluesUsed,
+            totalClues: currentFigure.clues.length,
+            score: roundScore,
+            misses,
+        };
+        const next = recordDailyResult(dailyStats, record);
+        if (next === dailyStats) return;
+        setDailyStats(next);
+        saveDailyStats(next);
+        track('daily_completed', { won, clues_used: cluesUsed, score: roundScore });
+    }, [currentFigure, daily, dailyStats]);
+
     // Check guess
     const handleGuess = useCallback(async (guess: string) => {
         if (!currentFigure) return;
@@ -402,21 +434,28 @@ export function useGame() {
             });
             track('round_completed', {
                 mode,
+                kind: playKind,
                 round,
                 points: breakdown.total,
                 clues_used: revealedClues.length,
                 misses: consecutiveMisses,
             });
+            if (isDaily) {
+                recordDaily(true, revealedClues.length, breakdown.total, consecutiveMisses);
+            }
         } else {
             handleIncorrectGuess('Not quite! Try again or reveal more clues.');
         }
     }, [
         consecutiveMisses,
         currentFigure,
+        isDaily,
         llmMode,
         messages,
         mode,
+        playKind,
         questionsAsked,
+        recordDaily,
         reportAiFailure,
         revealedClues,
         revealNextClue,
@@ -448,6 +487,7 @@ export function useGame() {
     // Switch between Classic and AI mode. Mid-game switches restart the game
     // because the two modes score rounds differently.
     const setMode = useCallback((nextMode: GameMode) => {
+        if (isDaily) return; // the daily puzzle is always Classic; go back to practice to switch
         if (nextMode === mode) return;
         if (nextMode === 'ai' && !aiAvailable) return;
 
@@ -459,7 +499,7 @@ export function useGame() {
             dispatch({ type: 'SET_MODE', payload: { mode: nextMode } });
         }
         track('mode_changed', { mode: nextMode, mid_game: midGame });
-    }, [aiAvailable, gameEnded, mode, showWelcome]);
+    }, [aiAvailable, gameEnded, isDaily, mode, showWelcome]);
 
     // Show/hide documentation
     const handleShowDocs = useCallback(() => {
@@ -485,8 +525,40 @@ export function useGame() {
 
     const handleGiveUp = useCallback(() => {
         dispatch({ type: 'GIVE_UP' });
-        track('gave_up', { mode, round });
-    }, [mode, round]);
+        track('gave_up', { mode, kind: playKind, round });
+        if (isDaily) {
+            recordDaily(false, revealedClues.length, 0, consecutiveMisses);
+        }
+    }, [consecutiveMisses, isDaily, mode, playKind, recordDaily, revealedClues.length, round]);
+
+    // Today's puzzle: the same figure for everyone, one attempt. A finished
+    // puzzle comes back as it ended, with its result instead of a replay.
+    const startDaily = useCallback(() => {
+        const puzzle = getDailyPuzzle(getEnabledFigures(), new Date());
+        if (!puzzle) return;
+        setTodayKey(puzzle.dateKey);
+        const prior = getDailyResult(dailyStats, puzzle.dateKey);
+        dispatch({
+            type: 'START_DAILY',
+            payload: {
+                figure: puzzle.figure,
+                dateKey: puzzle.dateKey,
+                dayNumber: puzzle.dayNumber,
+                priorResult: prior ? { won: prior.won, cluesUsed: prior.cluesUsed, score: prior.score } : undefined,
+            },
+        });
+        if (!prior) track('daily_started', { day: puzzle.dayNumber });
+    }, [dailyStats]);
+
+    // Back to the endless practice game, in the mode the player had chosen.
+    const startPractice = useCallback(() => {
+        dispatch({ type: 'RESTART_GAME', payload: { figures: shuffleArray(getEnabledFigures()) } });
+        track('practice_started', { from: playKind });
+    }, [playKind]);
+
+    const handleShared = useCallback((method: ShareMethod) => {
+        track('share_clicked', { method });
+    }, []);
 
     return {
         // State
@@ -519,6 +591,13 @@ export function useGame() {
         lastRoundBreakdown,
         lastRoundNumber,
         guessTokens,
+        playKind,
+        isDaily,
+        daily,
+        roundOutcome,
+        dailyStats,
+        todayKey,
+        todayResult,
 
         // Actions
         revealNextClue,
@@ -533,6 +612,9 @@ export function useGame() {
         resetConversation,
         handleValidationError,
         handleGiveUp,
+        startDaily,
+        startPractice,
+        handleShared,
 
         // Constants
         QUESTION_LIMIT,

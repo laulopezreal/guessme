@@ -112,6 +112,15 @@ export default function DocumentationModal({ isVisible, onClose, llmMode }: Docu
           </section>
 
           <section className="docs-section">
+            <h3>Daily Puzzle</h3>
+            <p>
+              One figure a day, the same for everyone, under Classic rules. You get a single attempt: solve it
+              or give up, then share your result grid and watch your streak grow. A new puzzle arrives at
+              midnight UTC. Your stats stay in this browser; find them under <strong>Stats</strong> in the header.
+            </p>
+          </section>
+
+          <section className="docs-section">
             <h3>Current Figures</h3>
             <p>The game includes {figureCount} historic figures:</p>
             <ul className="docs-list">

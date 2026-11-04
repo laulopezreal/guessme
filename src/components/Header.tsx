@@ -3,29 +3,42 @@ import Toggle from './Toggle';
 interface HeaderProps {
   llmMode: boolean;
   aiAvailable: boolean;
+  /** True while today's puzzle is open; the mode toggle is locked to Classic then. */
+  isDaily: boolean;
   onShowDocs: () => void;
+  onShowStats: () => void;
+  /** Opens the daily puzzle from practice, or practice from the daily puzzle. */
+  onSwitchKind: () => void;
   onToggleMode: () => void;
 }
 
 export default function Header({
   llmMode,
   aiAvailable,
+  isDaily,
   onShowDocs,
+  onShowStats,
+  onSwitchKind,
   onToggleMode,
 }: HeaderProps) {
-  const hint = aiAvailable
-    ? `Switch to ${llmMode ? 'Classic' : 'AI'} mode`
-    : 'AI mode is unavailable right now';
+  const hint = isDaily
+    ? 'The daily puzzle always uses Classic rules'
+    : aiAvailable
+      ? `Switch to ${llmMode ? 'Classic' : 'AI'} mode`
+      : 'AI mode is unavailable right now';
 
   return (
     <header className="game-header">
       <div className="navbar">
         <h1 className="game-title">Who Am I?</h1>
         <div className="navbar-controls">
-          <button
-            className="docs-btn"
-            onClick={onShowDocs}
-          >
+          <button type="button" className="nav-btn" onClick={onSwitchKind}>
+            {isDaily ? 'Practice' : 'Daily'}
+          </button>
+          <button type="button" className="nav-btn" onClick={onShowStats}>
+            Stats
+          </button>
+          <button type="button" className="docs-btn" onClick={onShowDocs}>
             How to Play
           </button>
           <div className="mode-toggle-wrapper" title={hint}>
@@ -33,7 +46,7 @@ export default function Header({
             <Toggle
               isOn={llmMode}
               onToggle={onToggleMode}
-              disabled={!aiAvailable}
+              disabled={!aiAvailable || isDaily}
               aria-label={hint}
             />
           </div>
