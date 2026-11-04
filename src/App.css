@@ -769,8 +769,7 @@ body {
 .modal {
     position: fixed;
     inset: 0;
-    background: var(--navy);
-    opacity: 0.95;
+    background: rgba(0, 31, 63, 0.95);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -785,7 +784,7 @@ body {
         opacity: 0;
     }
     to {
-        opacity: 0.95;
+        opacity: 1;
     }
 }
 
@@ -799,7 +798,8 @@ body {
     text-align: center;
     animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 8px 24px rgba(0, 31, 63, 0.3);
-    max-height: 90vh;
+    /* 100% is the overlay, which follows a phone's toolbars; vh does not */
+    max-height: min(90vh, 100%);
     overflow-y: auto;
 }
 
@@ -841,6 +841,36 @@ body {
     font-weight: 700;
 }
 
+/* Long dialogs: the text scrolls, the title above it and the button below it stay in view */
+.welcome-modal,
+.docs-modal {
+    display: flex;
+    flex-direction: column;
+}
+
+.welcome-content,
+.docs-content {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+/* Fades the text out above the button while there is more to scroll to */
+.welcome-content::after,
+.docs-content::after {
+    content: '';
+    display: block;
+    position: sticky;
+    bottom: 0;
+    height: var(--spacing-md);
+    background: linear-gradient(rgba(255, 255, 255, 0), var(--white) 70%);
+    pointer-events: none;
+}
+
+.welcome-modal .modal-btn,
+.docs-modal .modal-btn {
+    margin-top: 0;
+}
+
 /* Welcome Modal */
 .welcome-modal {
     max-width: 450px;
@@ -848,7 +878,7 @@ body {
 }
 
 .welcome-content {
-    margin: var(--spacing-md) 0;
+    margin-top: var(--spacing-xs);
 }
 
 .welcome-intro {
@@ -906,7 +936,6 @@ body {
     width: 100%;
     font-size: var(--font-size-sm);
     padding: var(--spacing-sm) var(--spacing-md);
-    margin-top: var(--spacing-md);
 }
 
 /* Give Up Confirm Modal */
@@ -938,13 +967,13 @@ body {
 /* Documentation Modal */
 .docs-modal {
     max-width: 700px;
-    max-height: 80vh;
+    max-height: min(80vh, 100%);
     overflow-y: auto;
     text-align: left;
 }
 
 .docs-content {
-    margin: var(--spacing-lg) 0;
+    margin-top: var(--spacing-sm);
 }
 
 .docs-section {
@@ -955,6 +984,8 @@ body {
 
 .docs-section:last-child {
     border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
 }
 
 .docs-section h3 {
@@ -1355,5 +1386,18 @@ body {
 
     .footer-grid {
         grid-template-columns: 1fr;
+    }
+}
+
+/* Phones, upright or on their side: the dialogs use all the room there is */
+@media (max-width: 480px), (max-height: 500px) {
+    .modal {
+        padding: var(--spacing-xs);
+    }
+
+    .modal-content,
+    .docs-modal {
+        max-height: 100%;
+        padding: var(--spacing-md);
     }
 }
