@@ -18,9 +18,11 @@ export default function Header({
           >
             How to Play
           </button>
-          <div className="mode-display">
-            <span className="mode-label">Mode: {llmMode ? 'AI' : 'Classic'}</span>
-          </div>
+          {llmMode && (
+            <div className="mode-display">
+              <span className="mode-label">Mode: AI</span>
+            </div>
+          )}
         </div>
       </div>
     </header>

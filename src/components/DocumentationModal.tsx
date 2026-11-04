@@ -16,8 +16,8 @@ export default function DocumentationModal({ isVisible, onClose, llmMode }: Docu
           <section className="docs-section">
             <h3>Game Objective</h3>
             <p>
-              Guess the identity of historic figures by gathering clues through conversation (AI Mode) 
-              or by revealing static hints (Classic Mode).
+              Guess the identity of historic figures by{' '}
+              {llmMode ? 'gathering clues through conversation' : 'revealing clues about them, one at a time'}.
             </p>
           </section>
 
@@ -59,7 +59,7 @@ export default function DocumentationModal({ isVisible, onClose, llmMode }: Docu
           ) : (
             <>
               <section className="docs-section">
-                <h3>Classic Mode</h3>
+                <h3>Clues</h3>
                 <p><strong>How it works:</strong></p>
                 <ul className="docs-list">
                   <li>Read the first clue about a historic figure</li>
@@ -76,15 +76,15 @@ export default function DocumentationModal({ isVisible, onClose, llmMode }: Docu
               </section>
 
               <section className="docs-section">
-                <h3>Scoring (Classic Mode)</h3>
+                <h3>Scoring</h3>
                 <p>Start with <strong>100 points</strong> per round.</p>
                 <ul className="docs-list">
                   <li>Every extra clue beyond the first: <strong>-10 points</strong></li>
                   <li>Each consecutive wrong guess: <strong>-5 points</strong></li>
                 </ul>
                 <p>
-                  Rounds can't go below <strong>50 points</strong>, so guess confidently and use clues wisely.
-                  The header shows the base points and every penalty applied for the last round.
+                  A correct guess never scores below <strong>50 points</strong>, so guess confidently and use clues
+                  wisely. Giving up scores nothing. The score board shows the base points and every penalty applied.
                 </p>
               </section>
             </>
@@ -95,18 +95,20 @@ export default function DocumentationModal({ isVisible, onClose, llmMode }: Docu
             <ul className="docs-list">
               <li>Enter the person's full name or last name</li>
               <li>Spelling variations are usually accepted</li>
-              <li>In AI mode, the AI validates guesses intelligently</li>
+              {llmMode && <li>In AI mode, the AI validates guesses intelligently</li>}
               <li>Consecutive wrong guesses subtract a few points, so adjust your approach if you're stuck.</li>
             </ul>
           </section>
 
-          <section className="docs-section">
-            <h3>Game Modes</h3>
-            <p>
-              The game mode (AI or Classic) is configured via environment variables before starting.
-              To switch modes, update your <code>.env.local</code> file and restart the dev server.
-            </p>
-          </section>
+          {llmMode && (
+            <section className="docs-section">
+              <h3>Game Modes</h3>
+              <p>
+                The game mode (AI or Classic) is configured via environment variables before starting.
+                To switch modes, update your <code>.env.local</code> file and restart the dev server.
+              </p>
+            </section>
+          )}
 
           <section className="docs-section">
             <h3>Current Figures</h3>
@@ -114,10 +116,9 @@ export default function DocumentationModal({ isVisible, onClose, llmMode }: Docu
             <ul className="docs-list">
               <li>Scientists and inventors</li>
               <li>Artists and writers</li>
-              <li>Leaders and pioneers</li>
             </ul>
             <p className="docs-note">
-              More figures coming soon! The game shuffles them randomly each time you play.
+              The game shuffles them randomly each time you play.
             </p>
           </section>
         </div>
