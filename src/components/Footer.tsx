@@ -10,7 +10,7 @@ const Footer: React.FC = () => {
         <p className="footer-description">
           Sharpen your deduction skills by pairing silhouettes with clever questions or carefully revealed clues.
         </p>
-        <p className="footer-meta">Copyright \u00a9 {currentYear} GuessMe</p>
+        <p className="footer-meta">Copyright © {currentYear} GuessMe</p>
       </div>
 
       <div className="footer-grid">
