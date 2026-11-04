@@ -12,7 +12,7 @@ export default function WelcomeModal({ isVisible, onStart, llmMode }: WelcomeMod
       <div className="modal-content welcome-modal">
         <h2 className="modal-title">Welcome to Who Am I?</h2>
         
-        <div className="welcome-content">
+        <div className="welcome-content" tabIndex={0}>
           <p className="welcome-intro">
             Guess historic figures by learning about them through clues or conversation!
           </p>

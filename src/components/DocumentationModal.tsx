@@ -12,7 +12,7 @@ export default function DocumentationModal({ isVisible, onClose, llmMode }: Docu
       <div className="modal-content docs-modal">
         <h2 className="modal-title">How to Play</h2>
         
-        <div className="docs-content">
+        <div className="docs-content" tabIndex={0}>
           <section className="docs-section">
             <h3>Game Objective</h3>
             <p>
