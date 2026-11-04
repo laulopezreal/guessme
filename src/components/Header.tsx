@@ -13,9 +13,7 @@ export default function Header({
   onShowDocs,
   onToggleMode,
 }: HeaderProps) {
-  const hint = aiAvailable
-    ? `Switch to ${llmMode ? 'Classic' : 'AI'} mode`
-    : 'AI mode is unavailable right now';
+  const hint = `Switch to ${llmMode ? 'Classic' : 'AI'} mode`;
 
   return (
     <header className="game-header">
@@ -28,15 +26,17 @@ export default function Header({
           >
             How to Play
           </button>
-          <div className="mode-toggle-wrapper" title={hint}>
-            <span className="mode-label">Mode: {llmMode ? 'AI' : 'Classic'}</span>
-            <Toggle
-              isOn={llmMode}
-              onToggle={onToggleMode}
-              disabled={!aiAvailable}
-              aria-label={hint}
-            />
-          </div>
+          {/* A choice of modes is only offered when the server can serve AI Mode. */}
+          {aiAvailable && (
+            <div className="mode-toggle-wrapper" title={hint}>
+              <span className="mode-label">Mode: {llmMode ? 'AI' : 'Classic'}</span>
+              <Toggle
+                isOn={llmMode}
+                onToggle={onToggleMode}
+                aria-label={hint}
+              />
+            </div>
+          )}
         </div>
       </div>
     </header>

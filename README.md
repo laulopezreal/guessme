@@ -35,7 +35,7 @@ Pick a mode on the welcome screen or with the toggle in the header. Switching mo
    - Each consecutive wrong guess: -5 points
    - AI conversations never drop below 25 points
 
-AI Mode is only offered when the server has an OpenAI key configured. Without one the toggle is disabled and the game runs in Classic Mode.
+AI Mode is only offered when the server has an OpenAI key configured. Without one the mode switch is hidden and the game runs in Classic Mode.
 
 The game includes diverse historic figures from science, arts, politics, and culture.
 

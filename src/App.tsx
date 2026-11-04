@@ -233,6 +233,7 @@ function App() {
         isVisible={showDocs}
         onClose={handleCloseDocs}
         llmMode={llmMode}
+        aiAvailable={aiAvailable}
       />
 
       <GameOverModal
@@ -246,8 +247,8 @@ function App() {
           <div className="modal-content confirm-modal">
             <h2 className="modal-title">Give up on this figure?</h2>
             <p className="modal-text">
-              If you give up, the answer will be revealed and this round will end. You won't be able to ask
-              more questions for this figure.
+              If you give up, the answer will be revealed and this round will end. You won't be able to{' '}
+              {llmMode ? 'ask more questions' : 'reveal more clues'} for this figure.
             </p>
             <div className="confirm-actions">
               <button className="modal-btn" onClick={handleConfirmGiveUp}>
@@ -280,7 +281,7 @@ function App() {
         </div>
       )}
 
-      <Footer />
+      <Footer llmMode={llmMode} />
     </div>
   );
 }
