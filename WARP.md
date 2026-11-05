@@ -113,7 +113,7 @@ guessme/
 - `gameReducer.ts` owns all state; `useGame.ts` wraps it with async actions (AI calls) and analytics events
 - `llmMode` is runtime state. `SET_MODE` switches before a game starts; `RESTART_GAME` with a `mode` switches mid-game (a switch restarts because scoring differs)
 - `aiStatus` comes from `GET /api/ai/status`; `SET_AI_STATUS` with `available: false` forces Classic Mode and explains why
-- `playKind` is `practice` or `daily`. `START_DAILY` loads the one figure for today (`selectDailyFigure` in `gameUtils.ts`) and, when today is already finished, restores the round as it ended; the hook derives `llmMode` as false while daily runs so Classic rules apply. Stats are kept by `services/dailyStats.ts` and an unfinished round by `services/dailyProgress.ts`, both under versioned localStorage keys
+- `playKind` is `practice` or `daily`. `START_DAILY` loads the one figure for today (`selectDailyFigure` in `gameUtils.ts`) and, when today is already finished, restores the round as it ended; the hook derives `llmMode` as false while daily runs so Classic rules apply. Stats are kept by `services/dailyStats.ts` and an unfinished round by `services/dailyProgress.ts`, both under versioned localStorage keys. After the round, while AI is available, the result panel offers three questions to the figure (`DAILY_ASK_*` actions, the `converse` op in the Worker); the count lives on the day's `DailyRecord`
 
 **AI proxy contract (`src/services/llmPrompts.ts`):**
 - `POST /api/ai/chat` with `{ op: 'greeting' | 'message' | 'validate', figureId, ... }`
@@ -177,5 +177,5 @@ These files are kept for reference but are not used by the React build.
 
 ## Next Steps
 
-- Free daily AI allowance and a paid tier, metered in the Worker (KV or Durable Object counters)
+- A paid tier beyond the three free daily questions, metered in the Worker (KV or Durable Object counters) instead of the browser
 - Grow the roster well beyond ten figures

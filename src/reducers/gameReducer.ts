@@ -1,4 +1,4 @@
-import type { HistoricFigure, Clue, Message, PlayKind, RoundOutcome } from '../types';
+import type { HistoricFigure, Clue, DailyAskState, Message, PlayKind, RoundOutcome } from '../types';
 import { getDefaultGameMode, type GameMode } from '../services/gameMode';
 import type { ScoreBreakdown } from '../utils/gameUtils';
 
@@ -42,6 +42,8 @@ export interface GameState {
   playKind: PlayKind;
   daily: { dateKey: string; dayNumber: number } | null;
   roundOutcome: RoundOutcome | null;
+  /** The open chat with today's figure after the round; empty outside the daily puzzle. */
+  dailyAsk: DailyAskState;
 }
 
 export const initialState: GameState = {
@@ -73,6 +75,7 @@ export const initialState: GameState = {
   playKind: 'practice',
   daily: null,
   roundOutcome: null,
+  dailyAsk: { messages: [], used: 0, isTyping: false },
 };
 
 export type GameAction =
@@ -101,7 +104,7 @@ export type GameAction =
         dateKey: string;
         dayNumber: number;
         /** Set when today's puzzle was already finished: the round is restored as it ended. */
-        priorResult?: { won: boolean; cluesUsed: number; score: number };
+        priorResult?: { won: boolean; cluesUsed: number; score: number; questionsAsked?: number };
         /** Set when today's round was left unfinished: the clues and misses so far. */
         progress?: {
           revealedClues: Array<Clue & { isAdaptive?: boolean }>;
@@ -109,7 +112,12 @@ export type GameAction =
           adaptiveNotice?: string;
         };
       };
-    };
+    }
+  // The chat with today's figure after the reveal. A question counts against the
+  // allowance only once it is answered, so a failed request costs nothing.
+  | { type: 'DAILY_ASK_SENT'; payload: Message }
+  | { type: 'DAILY_ASK_ANSWERED'; payload: Message }
+  | { type: 'DAILY_ASK_FAILED'; payload: Message };
 
 export function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
@@ -136,6 +144,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         playKind: 'practice',
         daily: null,
         roundOutcome: null,
+        dailyAsk: initialState.dailyAsk,
       };
 
     case 'START_GAME':
@@ -339,8 +348,31 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
           ? `You already solved today's puzzle: it was ${figure.name}. Come back tomorrow for a new one.`
           : `You already played today's puzzle. The answer was ${figure.name}. Come back tomorrow for a new one.`,
         feedbackType: priorResult.won ? 'success' : 'error',
+        dailyAsk: { ...initialState.dailyAsk, used: priorResult.questionsAsked ?? 0 },
       };
     }
+
+    case 'DAILY_ASK_SENT':
+      return {
+        ...state,
+        dailyAsk: { ...state.dailyAsk, messages: [...state.dailyAsk.messages, action.payload], isTyping: true },
+      };
+
+    case 'DAILY_ASK_ANSWERED':
+      return {
+        ...state,
+        dailyAsk: {
+          messages: [...state.dailyAsk.messages, action.payload],
+          used: state.dailyAsk.used + 1,
+          isTyping: false,
+        },
+      };
+
+    case 'DAILY_ASK_FAILED':
+      return {
+        ...state,
+        dailyAsk: { ...state.dailyAsk, messages: [...state.dailyAsk.messages, action.payload], isTyping: false },
+      };
 
     default:
       return state;

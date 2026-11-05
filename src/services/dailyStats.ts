@@ -104,3 +104,17 @@ export function streakAsOf(stats: DailyStats, todayKey: string): number {
 export function winRate(stats: DailyStats): number {
   return stats.played === 0 ? 0 : Math.round((stats.won / stats.played) * 100);
 }
+
+/**
+ * Notes how many questions the player has put to the day's figure after the
+ * reveal, so the allowance survives a reload. Returns the same stats when the
+ * day has no result yet or the count is unchanged.
+ */
+export function setDailyQuestionsAsked(stats: DailyStats, dateKey: string, questionsAsked: number): DailyStats {
+  const record = stats.results[dateKey];
+  if (!record || (record.questionsAsked ?? 0) === questionsAsked) return stats;
+  return {
+    ...stats,
+    results: { ...stats.results, [dateKey]: { ...record, questionsAsked } },
+  };
+}

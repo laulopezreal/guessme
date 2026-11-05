@@ -6,6 +6,7 @@ import {
     loadDailyStats,
     recordDailyResult,
     saveDailyStats,
+    setDailyQuestionsAsked,
     streakAsOf,
     winRate,
 } from './dailyStats';
@@ -81,6 +82,21 @@ describe('streakAsOf', () => {
     });
 });
 
+describe('setDailyQuestionsAsked', () => {
+    it('stores the count on the day it belongs to without mutating the old stats', () => {
+        const stats = recordDailyResult(emptyDailyStats(), result('2026-11-04', true));
+        const next = setDailyQuestionsAsked(stats, '2026-11-04', 2);
+        expect(getDailyResult(next, '2026-11-04')?.questionsAsked).toBe(2);
+        expect(getDailyResult(stats, '2026-11-04')?.questionsAsked).toBeUndefined();
+    });
+
+    it('leaves the stats alone for an unknown day or an unchanged count', () => {
+        const stats = setDailyQuestionsAsked(recordDailyResult(emptyDailyStats(), result('2026-11-04', true)), '2026-11-04', 1);
+        expect(setDailyQuestionsAsked(stats, '2026-11-05', 1)).toBe(stats);
+        expect(setDailyQuestionsAsked(stats, '2026-11-04', 1)).toBe(stats);
+    });
+});
+
 describe('localStorage persistence', () => {
     beforeEach(() => {
         localStorage.clear();
@@ -91,6 +107,12 @@ describe('localStorage persistence', () => {
         expect(saveDailyStats(stats)).toBe(true);
         expect(localStorage.getItem(DAILY_STATS_KEY)).toContain('"version":1');
         expect(loadDailyStats()).toEqual(stats);
+    });
+
+    it('keeps the questions asked with the day', () => {
+        const stats = setDailyQuestionsAsked(recordDailyResult(emptyDailyStats(), result('2026-11-04', true)), '2026-11-04', 3);
+        saveDailyStats(stats);
+        expect(getDailyResult(loadDailyStats(), '2026-11-04')?.questionsAsked).toBe(3);
     });
 
     it('falls back to empty stats for missing, corrupt or unknown data', () => {

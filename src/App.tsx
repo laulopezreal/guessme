@@ -58,6 +58,7 @@ function App() {
     todayKey,
     todayResult,
     dailyInProgress,
+    dailyAsk,
 
     // Actions
     revealNextClue,
@@ -75,9 +76,12 @@ function App() {
     startDaily,
     startPractice,
     handleShared,
+    askDailyFigure,
+    handleAskOpened,
 
     // Constants
     QUESTION_LIMIT,
+    DAILY_ASK_LIMIT,
   } = useGame();
 
   const formatBreakdown = (breakdown: ScoreBreakdown): string => {
@@ -267,6 +271,16 @@ function App() {
             onShowStats={() => setShowStats(true)}
             onPractice={startPractice}
             onPlayNext={startDaily}
+            ask={{
+              figureName: currentFigure.name,
+              available: aiAvailable,
+              messages: dailyAsk.messages,
+              used: dailyAsk.used,
+              limit: DAILY_ASK_LIMIT,
+              isTyping: dailyAsk.isTyping,
+              onAsk: askDailyFigure,
+              onOpen: handleAskOpened,
+            }}
           />
         )}
       </main>

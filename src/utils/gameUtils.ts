@@ -222,6 +222,9 @@ export function getFigureNameTokens(figures: HistoricFigure[]): string[] {
 /** UTC date of puzzle #1. Changing it renumbers every puzzle, so leave it alone. */
 export const DAILY_EPOCH = '2026-11-04';
 
+/** Free questions to today's figure after the reveal, per puzzle. */
+export const DAILY_ASK_LIMIT = 3;
+
 const MS_PER_DAY = 86_400_000;
 
 /** The calendar date in UTC as `YYYY-MM-DD`: the key everyone shares for a puzzle. */
@@ -359,4 +362,16 @@ export function formatCountdown(ms: number): string {
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = totalSeconds % 60;
   return [hours, minutes, seconds].map(part => String(part).padStart(2, '0')).join(':');
+}
+
+/** Leading titles that are not part of a person's name. */
+const NAME_TITLES = new Set([
+  'queen', 'king', 'prince', 'princess', 'emperor', 'empress', 'saint', 'st', 'st.',
+  'sir', 'dame', 'lady', 'lord', 'pope', 'president', 'general',
+]);
+
+/** The name to address a figure by in short copy: the first name, skipping a leading title. */
+export function figureShortName(name: string): string {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  return words.find(word => !NAME_TITLES.has(word.toLowerCase())) ?? name;
 }

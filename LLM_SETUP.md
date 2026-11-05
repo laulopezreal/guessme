@@ -22,6 +22,7 @@ Operations:
 | `greeting` | Opening line plus a two-line poem | `{ op, content }` |
 | `message` | One conversational turn, history trimmed to the last 12 messages | `{ op, content }` |
 | `validate` | Grade a guess, JSON-only answer with exact-match fallback | `{ op, result: { isCorrect, confidence, feedback } }` |
+| `converse` | One turn of the open chat after the daily reveal: the figure answers as themselves, history trimmed to the last 12 messages | `{ op, content }` |
 
 `GET /api/ai/status` returns `{ available, model }` so the app can disable the AI toggle when no key is configured.
 

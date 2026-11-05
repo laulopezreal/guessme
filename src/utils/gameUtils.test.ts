@@ -11,6 +11,7 @@ import {
     selectDailyFigure,
     shiftDateKey,
     utcDateKey,
+    figureShortName,
 } from './gameUtils';
 
 const roster = [
@@ -126,5 +127,18 @@ describe('dailyResultGrid', () => {
         expect(dailyResultGrid(1, 5, true)).toBe('🟦⬜⬜⬜⬜ ✅');
         expect(dailyResultGrid(7, 5, false)).toBe('🟦🟦🟦🟦🟦 ❌');
         expect(dailyResultGrid(0, 3, false)).toBe('⬜⬜⬜ ❌');
+    });
+});
+
+describe('figureShortName', () => {
+    it('uses the first name and skips a leading title', () => {
+        expect(figureShortName('Marie Curie')).toBe('Marie');
+        expect(figureShortName('Leonardo da Vinci')).toBe('Leonardo');
+        expect(figureShortName('Queen Elizabeth I')).toBe('Elizabeth');
+        expect(figureShortName('Cleopatra')).toBe('Cleopatra');
+    });
+
+    it('falls back to the whole name when every word is a title', () => {
+        expect(figureShortName('Pope')).toBe('Pope');
     });
 });

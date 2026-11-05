@@ -119,6 +119,7 @@ export default function DocumentationModal({ isVisible, onClose, llmMode, aiAvai
               One figure a day, the same for everyone, under Classic rules. You get a single attempt: solve it
               or give up, then share your result grid and watch your streak grow. A new puzzle arrives at
               midnight UTC. Your stats stay in this browser; find them under <strong>Stats</strong> in the header.
+              {aiAvailable && ' Once the round is over you can put three questions to the figure, who answers as themselves.'}
             </p>
           </section>
 

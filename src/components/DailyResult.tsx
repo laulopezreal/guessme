@@ -1,6 +1,20 @@
 import { useEffect, useState } from 'react';
-import { buildDailyShareText, dailyResultGrid, formatCountdown, msUntilNextUtcDay } from '../utils/gameUtils';
-import type { ShareMethod } from '../types';
+import DailyAskPanel from './DailyAskPanel';
+import { buildDailyShareText, dailyResultGrid, figureShortName, formatCountdown, msUntilNextUtcDay } from '../utils/gameUtils';
+import type { Message, ShareMethod } from '../types';
+
+/** The post-reveal chat with today's figure, offered while the server can serve AI. */
+interface DailyAskControls {
+  figureName: string;
+  available: boolean;
+  messages: Message[];
+  used: number;
+  limit: number;
+  isTyping: boolean;
+  onAsk: (question: string) => void;
+  /** Called when the player opens the chat. */
+  onOpen: () => void;
+}
 
 interface DailyResultProps {
   dayNumber: number;
@@ -15,6 +29,7 @@ interface DailyResultProps {
   onPractice: () => void;
   /** Called when the countdown ends and the next puzzle is available. */
   onPlayNext: () => void;
+  ask: DailyAskControls;
 }
 
 const hasWebShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
@@ -30,10 +45,12 @@ export default function DailyResult({
   onShowStats,
   onPractice,
   onPlayNext,
+  ask,
 }: DailyResultProps) {
   const [now, setNow] = useState(() => Date.now());
   const [notice, setNotice] = useState('');
   const [showFallback, setShowFallback] = useState(false);
+  const [askOpen, setAskOpen] = useState(false);
 
   // Tick once a second so the countdown to the next puzzle stays live.
   useEffect(() => {
@@ -73,6 +90,12 @@ export default function DailyResult({
   };
 
   const clueWord = cluesUsed === 1 ? 'clue' : 'clues';
+  const shortName = figureShortName(ask.figureName);
+
+  const openAsk = () => {
+    setAskOpen(true);
+    ask.onOpen();
+  };
 
   return (
     <section className="daily-result" aria-label="Daily puzzle result">
@@ -86,6 +109,25 @@ export default function DailyResult({
         <span className="daily-result-points">{score} pts</span>
       </p>
       <p className="daily-result-url">{siteUrl}</p>
+
+      {/* The chat is only offered while the server can serve AI; once open it stays, input and all, until AI goes away. */}
+      {ask.available && !askOpen && (
+        <button type="button" className="modal-btn daily-action daily-ask-open" onClick={openAsk}>
+          Ask {shortName} anything
+        </button>
+      )}
+      {askOpen && (
+        <DailyAskPanel
+          figureName={ask.figureName}
+          shortName={shortName}
+          messages={ask.messages}
+          used={ask.used}
+          limit={ask.limit}
+          isTyping={ask.isTyping}
+          available={ask.available}
+          onAsk={ask.onAsk}
+        />
+      )}
 
       <div className="daily-result-actions">
         {hasWebShare && (

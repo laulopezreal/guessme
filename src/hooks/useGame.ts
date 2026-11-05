@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
 import { getEnabledFigures } from '../data/figuresConfig';
-import { calculatePoints, shuffleArray, selectNextClue, llmScoreWeights, isCloseMatch, getFigureNameTokens, getDailyPuzzle, utcDateKey } from '../utils/gameUtils';
-import { AiRequestError, describeAiError, fetchAiStatus, getInitialGreeting, sendMessage, validateGuess } from '../services/llmService';
+import { calculatePoints, shuffleArray, selectNextClue, llmScoreWeights, isCloseMatch, getFigureNameTokens, getDailyPuzzle, utcDateKey, DAILY_ASK_LIMIT } from '../utils/gameUtils';
+import { AiRequestError, converseWithFigure, describeAiError, fetchAiStatus, getInitialGreeting, sendMessage, validateGuess } from '../services/llmService';
 import { rememberGameMode, type GameMode } from '../services/gameMode';
-import { getDailyResult, loadDailyStats, recordDailyResult, saveDailyStats } from '../services/dailyStats';
+import { getDailyResult, loadDailyStats, recordDailyResult, saveDailyStats, setDailyQuestionsAsked } from '../services/dailyStats';
 import { clearDailyProgress, loadDailyProgress, saveDailyProgress } from '../services/dailyProgress';
 import { track } from '../services/analytics';
 import type { Message, HistoricFigure, Clue, DailyRecord, ShareMethod } from '../types';
@@ -45,6 +45,7 @@ export function useGame() {
         playKind,
         daily,
         roundOutcome,
+        dailyAsk,
     } = state;
 
     const currentFigure = shuffledFigures[currentFigureIndex];
@@ -569,7 +570,9 @@ export function useGame() {
                 figure: puzzle.figure,
                 dateKey: puzzle.dateKey,
                 dayNumber: puzzle.dayNumber,
-                priorResult: prior ? { won: prior.won, cluesUsed: prior.cluesUsed, score: prior.score } : undefined,
+                priorResult: prior
+                    ? { won: prior.won, cluesUsed: prior.cluesUsed, score: prior.score, questionsAsked: prior.questionsAsked }
+                    : undefined,
                 progress: saved
                     ? {
                         revealedClues,
@@ -587,6 +590,48 @@ export function useGame() {
         dispatch({ type: 'RESTART_GAME', payload: { figures: shuffleArray(getEnabledFigures()) } });
         track('practice_started', { from: playKind });
     }, [playKind]);
+
+    // The open chat with today's figure once the round is over. The free allowance is
+    // counted only when an answer arrives and kept with the day's record, so a failed
+    // request costs nothing and a reload does not reset it.
+    const askDailyFigure = useCallback(async (question: string) => {
+        if (!isDaily || !daily || !currentFigure || !roundOutcome || !aiAvailable) return;
+        if (dailyAsk.isTyping || dailyAsk.used >= DAILY_ASK_LIMIT) return;
+
+        const now = Date.now();
+        const userMessage: Message = { id: `ask-${now}`, role: 'user', content: question, timestamp: now };
+        dispatch({ type: 'DAILY_ASK_SENT', payload: userMessage });
+        track('daily_ask_question', { count: dailyAsk.used + 1 });
+
+        try {
+            const history = [...dailyAsk.messages, userMessage].filter(m => m.role !== 'system');
+            const answer = await converseWithFigure(history, currentFigure);
+            dispatch({
+                type: 'DAILY_ASK_ANSWERED',
+                payload: { id: `ask-${Date.now()}-answer`, role: 'assistant', content: answer, timestamp: Date.now() },
+            });
+
+            const used = dailyAsk.used + 1;
+            if (used >= DAILY_ASK_LIMIT) track('daily_ask_limit_reached');
+            const next = setDailyQuestionsAsked(dailyStats, daily.dateKey, used);
+            if (next !== dailyStats) {
+                setDailyStats(next);
+                saveDailyStats(next);
+            }
+        } catch (error) {
+            console.error("Failed to get the figure's answer:", error);
+            // reportAiFailure answers null once it has switched AI off; say so here without the Classic-mode framing.
+            const message = reportAiFailure(error, 'converse') ?? 'The AI is not available right now.';
+            dispatch({
+                type: 'DAILY_ASK_FAILED',
+                payload: { id: `ask-${Date.now()}-error`, role: 'system', content: message, timestamp: Date.now() },
+            });
+        }
+    }, [aiAvailable, currentFigure, daily, dailyAsk, dailyStats, isDaily, reportAiFailure, roundOutcome]);
+
+    const handleAskOpened = useCallback(() => {
+        track('daily_ask_opened');
+    }, []);
 
     const handleShared = useCallback((method: ShareMethod) => {
         track('share_clicked', { method });
@@ -631,6 +676,7 @@ export function useGame() {
         todayKey,
         todayResult,
         dailyInProgress,
+        dailyAsk,
 
         // Actions
         revealNextClue,
@@ -648,8 +694,11 @@ export function useGame() {
         startDaily,
         startPractice,
         handleShared,
+        askDailyFigure,
+        handleAskOpened,
 
         // Constants
         QUESTION_LIMIT,
+        DAILY_ASK_LIMIT,
     };
 }

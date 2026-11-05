@@ -45,6 +45,7 @@ One figure per UTC calendar day, the same for everyone, played under Classic rul
 - When the round ends you get a result panel with a Wordle-style grid (one square per clue revealed, a tick for a solve or a cross for a give-up), the score, the puzzle number and the site URL. **Share** uses the Web Share sheet where the browser has one, **Copy result** uses the clipboard, and if both are blocked the text appears in a box to copy by hand.
 - Stats live in `localStorage` under the versioned key `guessme:daily-stats:v1`: games played, win rate, current and best streak, and how many clues your wins needed. Open them from the header or the result panel.
 - An unfinished round is saved in the browser too (`guessme:daily-progress:v1`), so a reload or a detour into practice resumes it with the same clues and misses.
+- When the server has an OpenAI key, the result panel offers **Ask {first name} anything**: three questions a day to the figure, who now answers openly in the first person. The count is kept with the day's result, so a reload does not reset it.
 - A finished puzzle cannot be replayed: reopening it shows the result and a countdown to the next puzzle at midnight UTC.
 
 The game includes diverse historic figures from science, arts, politics, and culture.
@@ -91,6 +92,7 @@ guessme/
 │   │   ├── FeedbackMessage.tsx
 │   │   ├── GameOverModal.tsx
 │   │   ├── DailyResult.tsx      # Shareable daily result + countdown
+│   │   ├── DailyAskPanel.tsx    # Three questions to today's figure after the reveal
 │   │   ├── DailyStatsModal.tsx  # Played, win rate, streaks, clue distribution
 │   │   ├── WelcomeModal.tsx     # Intro + Daily / Classic / AI picker
 │   │   ├── DocumentationModal.tsx # "How to play" overlay
@@ -196,7 +198,7 @@ Set a monthly spend cap in your OpenAI account as the hard backstop.
 
 ## 📈 Analytics
 
-Set `VITE_POSTHOG_KEY` (and optionally `VITE_POSTHOG_HOST`) to send gameplay events to PostHog in cookieless mode. Without a key, events are logged to the console in development and dropped in production. Events include game started, round completed, clue revealed, question asked, guess incorrect, gave up, game completed and mode changed, plus `daily_started`, `daily_completed` (won, clues used, score) and `share_clicked` (share sheet, clipboard or manual copy) for the daily puzzle.
+Set `VITE_POSTHOG_KEY` (and optionally `VITE_POSTHOG_HOST`) to send gameplay events to PostHog in cookieless mode. Without a key, events are logged to the console in development and dropped in production. Events include game started, round completed, clue revealed, question asked, guess incorrect, gave up, game completed and mode changed, plus `daily_started`, `daily_completed` (won, clues used, score), `share_clicked` (share sheet, clipboard or manual copy), `daily_ask_opened`, `daily_ask_question` (count) and `daily_ask_limit_reached` for the daily puzzle.
 
 ## 🤝 Contributing
 

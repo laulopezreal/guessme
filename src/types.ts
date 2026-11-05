@@ -51,6 +51,8 @@ export interface DailyRecord {
   totalClues: number;
   score: number;
   misses: number;
+  /** Questions put to the figure after the reveal, kept so the daily allowance survives a reload. */
+  questionsAsked?: number;
 }
 
 export interface DailyStats {
@@ -76,4 +78,12 @@ export interface DailyProgress {
   dateKey: string;
   revealed: Array<{ text: string; adaptive: boolean }>;
   misses: number;
+}
+
+/** The chat with today's figure once the answer is known: the player asks, the figure answers openly. */
+export interface DailyAskState {
+  messages: Message[];
+  /** Questions answered today, counting earlier visits. */
+  used: number;
+  isTyping: boolean;
 }

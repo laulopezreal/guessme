@@ -1545,6 +1545,78 @@ body {
     font-variant-numeric: tabular-nums;
 }
 
+/* The chat with today's figure after the reveal */
+.daily-result .daily-ask-open {
+    margin: 0;
+    width: 100%;
+    max-width: 320px;
+}
+
+.daily-ask {
+    width: 100%;
+    border: 2px solid var(--navy);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    text-align: left;
+}
+
+.daily-ask-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+}
+
+.daily-ask-title {
+    font-size: var(--font-size-md);
+    font-weight: 700;
+    color: var(--navy);
+}
+
+.daily-ask-intro {
+    font-size: var(--font-size-sm);
+    color: var(--navy);
+    opacity: 0.8;
+}
+
+.daily-ask-messages {
+    flex: none;
+    max-height: 260px;
+}
+
+.daily-ask-messages:empty {
+    display: none;
+}
+
+/* The panel is narrower than the AI-mode chat, so bubbles may use more of it */
+.daily-ask .message {
+    max-width: 90%;
+}
+
+.daily-ask-error {
+    margin: 0;
+    align-self: stretch;
+}
+
+.daily-ask-form {
+    display: flex;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+}
+
+.daily-ask-form .guess-input {
+    min-width: 0;
+    flex: 1 1 200px;
+}
+
+.daily-ask-limit {
+    margin: 0;
+}
+
 /* Stats modal */
 .stats-modal {
     max-width: 480px;
