@@ -38,4 +38,11 @@ describe('getFigureNameTokens', () => {
         expect(tokens).not.toContain('of');
         expect(tokens).not.toContain('da');
     });
+
+    it('drops epithets so "were you great?" still reads as a question', () => {
+        const tokens = getFigureNameTokens(getEnabledFigures());
+        for (const epithet of ['great', 'magnificent', 'conqueror', 'jr', 'king']) {
+            expect(tokens).not.toContain(epithet);
+        }
+    });
 });
