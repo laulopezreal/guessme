@@ -64,4 +64,21 @@ describe('isCloseMatch against the roster', () => {
         expect(solves('Einstien', 'Albert Einstein')).toBe(true);
         expect(solves('Newton', 'Albert Einstein')).toBe(false);
     });
+
+    it('does not let an epithet or a title solve a figure', () => {
+        expect(solves('Great', 'Alexander the Great')).toBe(false);
+        expect(solves('the great', 'Catherine the Great')).toBe(false);
+        expect(solves('king', 'Martin Luther King Jr.')).toBe(false);
+        expect(solves('magnificent', 'Suleiman the Magnificent')).toBe(false);
+        expect(solves('alexander', 'Alexander the Great')).toBe(true);
+        expect(solves('Catherine', 'Catherine the Great')).toBe(true);
+        expect(solves('MLK', 'Martin Luther King Jr.')).toBe(true);
+        expect(solves('Suleiman', 'Suleiman the Magnificent')).toBe(true);
+    });
+
+    it('accepts unaccented and native spellings listed as alternate names', () => {
+        expect(solves('simon bolivar', 'Simón Bolívar')).toBe(true);
+        expect(solves('ibn sina', 'Avicenna')).toBe(true);
+        expect(solves('King Tut', 'Tutankhamun')).toBe(true);
+    });
 });
