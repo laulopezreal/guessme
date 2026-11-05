@@ -23,9 +23,7 @@ export default function Header({
 }: HeaderProps) {
   const hint = isDaily
     ? 'The daily puzzle always uses Classic rules'
-    : aiAvailable
-      ? `Switch to ${llmMode ? 'Classic' : 'AI'} mode`
-      : 'AI mode is unavailable right now';
+    : `Switch to ${llmMode ? 'Classic' : 'AI'} mode`;
 
   return (
     <header className="game-header">
@@ -41,15 +39,18 @@ export default function Header({
           <button type="button" className="docs-btn" onClick={onShowDocs}>
             How to Play
           </button>
-          <div className="mode-toggle-wrapper" title={hint}>
-            <span className="mode-label">Mode: {llmMode ? 'AI' : 'Classic'}</span>
-            <Toggle
-              isOn={llmMode}
-              onToggle={onToggleMode}
-              disabled={!aiAvailable || isDaily}
-              aria-label={hint}
-            />
-          </div>
+          {/* A choice of modes is only offered when the server can serve AI Mode; the daily locks it to Classic. */}
+          {aiAvailable && (
+            <div className="mode-toggle-wrapper" title={hint}>
+              <span className="mode-label">Mode: {llmMode ? 'AI' : 'Classic'}</span>
+              <Toggle
+                isOn={llmMode}
+                onToggle={onToggleMode}
+                disabled={isDaily}
+                aria-label={hint}
+              />
+            </div>
+          )}
         </div>
       </div>
     </header>

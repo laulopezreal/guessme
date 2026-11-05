@@ -45,9 +45,9 @@ export default function WelcomeModal({
       <div className="modal-content welcome-modal">
         <h2 className="modal-title">Welcome to Who Am I?</h2>
 
-        <div className="welcome-content">
+        <div className="welcome-content" tabIndex={0}>
           <p className="welcome-intro">
-            Guess historic figures by learning about them through clues or conversation!
+            Guess historic figures by learning about them through {!dailySelected && llmMode ? 'conversation' : 'clues'}!
           </p>
 
           <div className="mode-toggle welcome-mode-picker" role="group" aria-label="Choose a game">
@@ -65,25 +65,28 @@ export default function WelcomeModal({
               aria-pressed={classicActive}
               onClick={() => choosePractice('classic')}
             >
-              Classic
+              {aiAvailable ? 'Classic' : 'Practice'}
             </button>
-            <button
-              type="button"
-              className={`mode-btn ${aiActive ? 'active' : ''}`}
-              aria-pressed={aiActive}
-              disabled={!aiAvailable}
-              title={aiAvailable ? undefined : 'AI mode is unavailable right now'}
-              onClick={() => choosePractice('ai')}
-            >
-              AI
-            </button>
+            {/* AI is only offered when the server can serve AI Mode. */}
+            {aiAvailable && (
+              <button
+                type="button"
+                className={`mode-btn ${aiActive ? 'active' : ''}`}
+                aria-pressed={aiActive}
+                onClick={() => choosePractice('ai')}
+              >
+                AI
+              </button>
+            )}
           </div>
           <p className="mode-note">
             {dailySelected
-              ? 'One figure a day, the same for everyone. Classic and AI are endless practice.'
+              ? aiAvailable
+                ? 'One figure a day, the same for everyone. Classic and AI are endless practice.'
+                : 'One figure a day, the same for everyone. Practice is endless.'
               : aiAvailable
                 ? 'You can switch modes later from the header. Switching mid-game starts a new game.'
-                : 'AI mode is unavailable right now, so Classic mode is selected.'}
+                : 'Endless rounds with a new figure each time.'}
           </p>
 
           {dailySelected ? (
@@ -112,7 +115,7 @@ export default function WelcomeModal({
             </div>
           ) : (
             <div className="mode-explanation">
-              <h3>Classic Mode</h3>
+              <h3>{aiAvailable ? 'Classic Mode' : 'Practice'}</h3>
               <ul className="game-rules">
                 <li>Read clues about a historic figure</li>
                 <li>Reveal more clues to narrow it down</li>

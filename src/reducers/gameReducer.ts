@@ -292,7 +292,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         isRevealed: true,
         inputDisabled: true,
         showNextButton: true,
-        feedbackMessage: `You gave up. The answer was ${currentFigure.name}. This round is over—you can't ask more questions for this figure.`,
+        feedbackMessage: `You gave up. The answer was ${currentFigure.name}. This round is over—you can't ${state.llmMode ? 'ask more questions' : 'reveal more clues'} for this figure.`,
         feedbackType: 'error',
         consecutiveMisses: 0,
         adaptiveHintNotice: '',

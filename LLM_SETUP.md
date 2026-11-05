@@ -34,7 +34,7 @@ Errors come back as `{ error }` with a status code: `503 ai_unavailable`, `429 r
 3. Run `npm run dev`. The Cloudflare Vite plugin runs the Worker locally and passes `OPENAI_API_KEY` from `.env.local` to it. The browser bundle never sees it: only keys prefixed `VITE_` reach the client.
 4. Open the game. The header shows the mode toggle; pick AI Mode on the welcome screen or flip the toggle.
 
-Without a key, `/api/ai/status` reports `available: false`, the toggle is disabled and the game runs in Classic Mode. If you set `VITE_GAME_MODE=ai` the app still falls back to Classic Mode in that case and tells the player why.
+Without a key, `/api/ai/status` reports `available: false`, the mode switch is hidden and the game runs in Classic Mode. If you set `VITE_GAME_MODE=ai` the app still falls back to Classic Mode in that case and tells the player why.
 
 ## Production
 
@@ -63,7 +63,7 @@ With `gpt-4o-mini` at $0.15 per 1M input tokens and $0.60 per 1M output tokens, 
 
 ## Troubleshooting
 
-**AI toggle is disabled**
+**No mode switch in the header**
 - Check `.env.local` contains `OPENAI_API_KEY` and restart `npm run dev`
 - In production, confirm the secret exists: `npx wrangler secret list`
 

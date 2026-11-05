@@ -35,7 +35,7 @@ Pick the daily puzzle or a practice mode on the welcome screen. In practice, the
    - Each consecutive wrong guess: -5 points
    - AI conversations never drop below 25 points
 
-AI Mode is only offered when the server has an OpenAI key configured. Without one the toggle is disabled and the game runs in Classic Mode.
+AI Mode is only offered when the server has an OpenAI key configured. Without one the mode switch is hidden and the game runs in Classic Mode.
 
 ### Daily Puzzle
 
