@@ -10,6 +10,8 @@ interface GuessInputProps {
   questionLimitReached?: boolean;
   onGiveUp?: () => void;
   canGiveUp?: boolean;
+  /** Lowercase name fragments of the figures in play, used to spot guesses typed as questions. */
+  figureTokens?: string[];
 }
 
 export default function GuessInput({
@@ -22,6 +24,7 @@ export default function GuessInput({
   questionLimitReached = false,
   onGiveUp,
   canGiveUp = true,
+  figureTokens = [],
 }: GuessInputProps) {
   const [input, setInput] = useState('');
   const [isQuestionMode, setIsQuestionMode] = useState(true);
@@ -70,25 +73,7 @@ export default function GuessInput({
     });
     if (isGreeting) return false;
 
-    // Known figure name tokens (lowercase) – surnames and key first names.
-    const figureTokens = [
-      'einstein',
-      'curie',
-      'tesla',
-      'newton',
-      'galileo',
-'shakespeare','shakespear','shakspear',
-      'napoleon',
-      'leonardo',
-      'joan',
-      'elizabeth',
-      'marie',
-      'albert',
-      'nikola',
-      'isaac',
-      'william',
-    ];
-
+    // Figure name tokens come from the roster in play (see getFigureNameTokens).
     const containsFigureToken = (text: string): boolean => {
       const tokens = text.toLowerCase().split(/\s+/);
       return tokens.some((t) => figureTokens.includes(t));

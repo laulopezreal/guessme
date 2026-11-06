@@ -188,3 +188,29 @@ export function isCloseMatch(guess: string, answer: string): boolean {
 
   return distance <= maxErrors;
 }
+
+const NAME_TOKEN_STOPWORDS = new Set([
+  'the', 'of', 'and', 'von', 'van', 'della',
+  'queen', 'king', 'emperor', 'empress', 'saint', 'lord', 'lady', 'sir', 'dame',
+  'prince', 'princess', 'duke', 'duchess', 'pope', 'general', 'president', 'doctor', 'madame',
+]);
+
+/**
+ * Lowercase name fragments that strongly suggest a guess when they appear in
+ * a question ("are you einstein?"). Titles and generic words are excluded so
+ * ordinary questions ("are you the queen?") still count as questions.
+ */
+export function getFigureNameTokens(figures: HistoricFigure[]): string[] {
+  const tokens = new Set<string>();
+  for (const figure of figures) {
+    for (const name of [figure.name, ...figure.alternateNames]) {
+      for (const word of name.toLowerCase().split(/\s+/)) {
+        const token = word.replace(/[^\p{L}'-]/gu, '');
+        if (token.length >= 4 && !NAME_TOKEN_STOPWORDS.has(token)) {
+          tokens.add(token);
+        }
+      }
+    }
+  }
+  return [...tokens];
+}

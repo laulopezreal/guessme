@@ -1,12 +1,20 @@
+import Toggle from './Toggle';
+
 interface HeaderProps {
   llmMode: boolean;
+  aiAvailable: boolean;
   onShowDocs: () => void;
+  onToggleMode: () => void;
 }
 
 export default function Header({
   llmMode,
+  aiAvailable,
   onShowDocs,
+  onToggleMode,
 }: HeaderProps) {
+  const hint = `Switch to ${llmMode ? 'Classic' : 'AI'} mode`;
+
   return (
     <header className="game-header">
       <div className="navbar">
@@ -18,9 +26,15 @@ export default function Header({
           >
             How to Play
           </button>
-          {llmMode && (
-            <div className="mode-display">
-              <span className="mode-label">Mode: AI</span>
+          {/* A choice of modes is only offered when the server can serve AI Mode. */}
+          {aiAvailable && (
+            <div className="mode-toggle-wrapper" title={hint}>
+              <span className="mode-label">Mode: {llmMode ? 'AI' : 'Classic'}</span>
+              <Toggle
+                isOn={llmMode}
+                onToggle={onToggleMode}
+                aria-label={hint}
+              />
             </div>
           )}
         </div>

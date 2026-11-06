@@ -11,12 +11,14 @@ import DocumentationModal from './components/DocumentationModal';
 import Footer from './components/Footer';
 import { useGame } from './hooks/useGame';
 import { calculatePoints, classicScoreWeights, llmScoreWeights, type ScoreBreakdown } from './utils/gameUtils';
+import type { GameMode } from './services/gameMode';
 import './App.css';
 
 const WARNING_THRESHOLD = 3;
 
 function App() {
   const [showGiveUpConfirm, setShowGiveUpConfirm] = useState(false);
+  const [pendingMode, setPendingMode] = useState<GameMode | null>(null);
 
   const {
     // State
@@ -33,6 +35,7 @@ function App() {
     triggerShake,
     adaptiveHintNotice,
     llmMode,
+    aiAvailable,
     messages,
     questionsAsked,
     isTyping,
@@ -43,6 +46,7 @@ function App() {
     revealedClues,
     lastRoundBreakdown,
     lastRoundNumber,
+    guessTokens,
 
     // Actions
     revealNextClue,
@@ -51,6 +55,7 @@ function App() {
     nextFigure,
     restartGame,
     handleStartGame,
+    setMode,
     handleShowDocs,
     handleCloseDocs,
     resetConversation,
@@ -113,6 +118,25 @@ function App() {
     setShowGiveUpConfirm(false);
   };
 
+  // Switching modes mid-game restarts the game, so ask first.
+  const requestMode = (nextMode: GameMode) => {
+    const midGame = !showWelcome && !gameEnded;
+    if (midGame) {
+      setPendingMode(nextMode);
+    } else {
+      setMode(nextMode);
+    }
+  };
+
+  const handleConfirmMode = () => {
+    if (pendingMode) setMode(pendingMode);
+    setPendingMode(null);
+  };
+
+  const handleCancelMode = () => {
+    setPendingMode(null);
+  };
+
   if (!currentFigure) {
     return <div>Loading...</div>;
   }
@@ -121,7 +145,9 @@ function App() {
     <div className="game-container">
       <Header
         llmMode={llmMode}
+        aiAvailable={aiAvailable}
         onShowDocs={handleShowDocs}
+        onToggleMode={() => requestMode(llmMode ? 'classic' : 'ai')}
       />
       <div className="character-and-score">
         <CharacterSilhouette revealed={isRevealed} eraTags={currentFigure.eraTags} />
@@ -178,6 +204,7 @@ function App() {
           questionLimitReached={llmMode ? outOfQuestions : false}
           onGiveUp={handleGiveUpRequest}
           canGiveUp={!inputDisabled && !showNextButton}
+          figureTokens={guessTokens}
         />
 
         <FeedbackMessage
@@ -198,12 +225,15 @@ function App() {
         isVisible={showWelcome}
         onStart={handleStartGame}
         llmMode={llmMode}
+        aiAvailable={aiAvailable}
+        onSelectMode={setMode}
       />
 
       <DocumentationModal
         isVisible={showDocs}
         onClose={handleCloseDocs}
         llmMode={llmMode}
+        aiAvailable={aiAvailable}
       />
 
       <GameOverModal
@@ -226,6 +256,25 @@ function App() {
               </button>
               <button className="modal-btn modal-btn-secondary" onClick={handleCancelGiveUp}>
                 Continue playing
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {pendingMode && (
+        <div className="modal">
+          <div className="modal-content confirm-modal">
+            <h2 className="modal-title">Switch to {pendingMode === 'ai' ? 'AI' : 'Classic'} mode?</h2>
+            <p className="modal-text">
+              The two modes score rounds differently, so switching starts a new game and resets your score.
+            </p>
+            <div className="confirm-actions">
+              <button className="modal-btn" onClick={handleConfirmMode}>
+                Switch and restart
+              </button>
+              <button className="modal-btn modal-btn-secondary" onClick={handleCancelMode}>
+                Keep playing
               </button>
             </div>
           </div>

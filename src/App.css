@@ -1401,3 +1401,19 @@ body {
         padding: var(--spacing-md);
     }
 }
+
+/* ========================================
+   Runtime mode switching
+   ======================================== */
+
+.welcome-mode-picker {
+    margin-bottom: var(--spacing-xs);
+}
+
+.mode-note {
+    font-size: var(--font-size-xs);
+    text-align: center;
+    color: var(--navy);
+    opacity: 0.8;
+    margin-bottom: var(--spacing-md);
+}

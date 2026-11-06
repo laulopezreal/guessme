@@ -1,7 +1,9 @@
-import { useCallback, useEffect, useReducer } from 'react';
+import { useCallback, useEffect, useMemo, useReducer } from 'react';
 import { getEnabledFigures } from '../data/figuresConfig';
-import { calculatePoints, shuffleArray, selectNextClue, llmScoreWeights, isCloseMatch } from '../utils/gameUtils';
-import { getInitialGreeting, sendMessage, validateGuess } from '../services/llmService';
+import { calculatePoints, shuffleArray, selectNextClue, llmScoreWeights, isCloseMatch, getFigureNameTokens } from '../utils/gameUtils';
+import { AiRequestError, describeAiError, fetchAiStatus, getInitialGreeting, sendMessage, validateGuess } from '../services/llmService';
+import { rememberGameMode, type GameMode } from '../services/gameMode';
+import { track } from '../services/analytics';
 import type { Message, HistoricFigure, Clue } from '../types';
 import { gameReducer, initialState } from '../reducers/gameReducer';
 
@@ -30,6 +32,7 @@ export function useGame() {
         triggerShake,
         adaptiveHintNotice,
         llmMode,
+        aiStatus,
         messages,
         questionsAsked,
         isTyping,
@@ -39,6 +42,36 @@ export function useGame() {
     } = state;
 
     const currentFigure = shuffledFigures[currentFigureIndex];
+    const mode: GameMode = llmMode ? 'ai' : 'classic';
+    const aiAvailable = aiStatus !== 'unavailable';
+
+    // Name fragments used by the input to spot guesses typed as questions.
+    const guessTokens = useMemo(() => getFigureNameTokens(shuffledFigures), [shuffledFigures]);
+
+    // Ask the server whether AI mode can be served (only it holds the API key).
+    useEffect(() => {
+        let cancelled = false;
+        fetchAiStatus().then(status => {
+            if (cancelled) return;
+            dispatch({ type: 'SET_AI_STATUS', payload: { available: status.available } });
+            if (!status.available) track('ai_unavailable');
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    // Turn an AI failure into a player-facing message. Returns null when the
+    // reducer already explains the situation (AI mode switched off).
+    const reportAiFailure = useCallback((error: unknown, op: string): string | null => {
+        const code = error instanceof AiRequestError ? error.code : 'network_error';
+        track('ai_error', { op, code });
+        if (code === 'ai_unavailable') {
+            dispatch({ type: 'SET_AI_STATUS', payload: { available: false } });
+            return null;
+        }
+        return describeAiError(error);
+    }, []);
 
     // Initialize conversation with AI greeting
     const initializeConversation = useCallback(async (figure: HistoricFigure) => {
@@ -83,14 +116,14 @@ export function useGame() {
             }
         } catch (error) {
             console.error('Failed to get initial greeting:', error);
-            dispatch({
-                type: 'SET_FEEDBACK',
-                payload: { message: 'AI mode failed. Please check your configuration.', type: 'error' }
-            });
+            const message = reportAiFailure(error, 'greeting');
+            if (message) {
+                dispatch({ type: 'SET_FEEDBACK', payload: { message, type: 'error' } });
+            }
         } finally {
             dispatch({ type: 'SET_IS_TYPING', payload: false });
         }
-    }, [llmMode]);
+    }, [llmMode, reportAiFailure]);
 
     // Initialize game
     const initializeGame = useCallback(() => {
@@ -138,7 +171,8 @@ export function useGame() {
             type: 'REVEAL_CLUE',
             payload: { clue: nextClue, isAdaptive: adaptive, adaptiveNotice: adaptive ? 'An adaptive hint was provided after repeated misses. Future points will factor this in.' : undefined }
         });
-    }, [consecutiveMisses, currentFigure, revealedClues]);
+        track('clue_revealed', { mode, index: revealedClues.length + 1, adaptive });
+    }, [consecutiveMisses, currentFigure, mode, revealedClues]);
 
     // Handle asking a question (LLM mode)
     const handleAskQuestion = useCallback(async (question: string) => {
@@ -169,12 +203,13 @@ export function useGame() {
         }
 
         dispatch({ type: 'SET_IS_TYPING', payload: true });
+        track('ai_question_asked', { number: nextQuestionCount, round });
 
         // Update hint level based on questions asked
         const newHintLevel = Math.min(5, Math.floor(nextQuestionCount / 2) + 1);
 
         try {
-            // We need the updated messages list for the API call. 
+            // We need the updated messages list for the API call.
             // State update is async, so we construct it manually.
             const conversationHistory = [...messages, userMessage].filter(m => m.role !== 'system');
             const response = await sendMessage(conversationHistory, currentFigure, newHintLevel);
@@ -189,25 +224,22 @@ export function useGame() {
             dispatch({ type: 'ADD_MESSAGE', payload: assistantMessage });
         } catch (error) {
             console.error('Failed to get AI response:', error);
-            console.error('Error details:', error instanceof Error ? error.message : String(error));
-            
-            // Add error as system message in conversation
-            const errorMsg: Message = {
-                id: `error-${Date.now()}`,
-                role: 'system',
-                content: `⚠️ AI Error: ${error instanceof Error ? error.message : 'Unknown error'}. Check console for details.`,
-                timestamp: Date.now(),
-            };
-            dispatch({ type: 'ADD_MESSAGE', payload: errorMsg });
-            
-            dispatch({
-                type: 'SET_FEEDBACK',
-                payload: { message: 'Failed to get AI response. Try again.', type: 'error' }
-            });
+            const message = reportAiFailure(error, 'message');
+            if (message) {
+                // Add error as system message in conversation
+                const errorMsg: Message = {
+                    id: `error-${Date.now()}`,
+                    role: 'system',
+                    content: `⚠️ ${message}`,
+                    timestamp: Date.now(),
+                };
+                dispatch({ type: 'ADD_MESSAGE', payload: errorMsg });
+                dispatch({ type: 'SET_FEEDBACK', payload: { message, type: 'error' } });
+            }
         } finally {
             dispatch({ type: 'SET_IS_TYPING', payload: false });
         }
-    }, [currentFigure, llmMode, messages, questionsAsked]);
+    }, [currentFigure, llmMode, messages, questionsAsked, reportAiFailure, round]);
 
     // Check guess
     const handleGuess = useCallback(async (guess: string) => {
@@ -219,6 +251,7 @@ export function useGame() {
                 type: 'REGISTER_MISS',
                 payload: { feedback: feedbackMsg, triggerShake: true }
             });
+            track('guess_incorrect', { mode, round });
 
             // We need to check if we should reveal a clue based on the NEW miss count.
             // `consecutiveMisses` in state is the OLD value.
@@ -257,7 +290,6 @@ export function useGame() {
             dispatch({ type: 'SET_IS_TYPING', payload: true });
             try {
                 const result = await validateGuess(guess, currentFigure, messages);
-                console.log('Guess validation result:', { guess, result });
 
                 if (result.isCorrect) {
                     // Correct guess
@@ -298,6 +330,13 @@ export function useGame() {
                             breakdown,
                         }
                     });
+                    track('round_completed', {
+                        mode,
+                        round,
+                        points: breakdown.total,
+                        questions: questionsAsked,
+                        misses: consecutiveMisses,
+                    });
                 } else if (result.confidence >= 0.7) {
                     // Close typo/misspelling - give helpful feedback without penalty
                     const typoMessage: Message = {
@@ -326,10 +365,10 @@ export function useGame() {
                 }
             } catch (error) {
                 console.error('Validation error:', error);
-                dispatch({
-                    type: 'SET_FEEDBACK',
-                    payload: { message: 'Validation failed. Try again.', type: 'error' }
-                });
+                const message = reportAiFailure(error, 'validate');
+                if (message) {
+                    dispatch({ type: 'SET_FEEDBACK', payload: { message, type: 'error' } });
+                }
             } finally {
                 dispatch({ type: 'SET_IS_TYPING', payload: false });
             }
@@ -361,6 +400,13 @@ export function useGame() {
                     breakdown,
                 }
             });
+            track('round_completed', {
+                mode,
+                round,
+                points: breakdown.total,
+                clues_used: revealedClues.length,
+                misses: consecutiveMisses,
+            });
         } else {
             handleIncorrectGuess('Not quite! Try again or reveal more clues.');
         }
@@ -369,27 +415,51 @@ export function useGame() {
         currentFigure,
         llmMode,
         messages,
+        mode,
         questionsAsked,
+        reportAiFailure,
         revealedClues,
         revealNextClue,
+        round,
     ]);
 
     // Next figure
     const nextFigure = useCallback(() => {
+        if (currentFigureIndex + 1 >= shuffledFigures.length) {
+            track('game_completed', { mode, score, rounds: shuffledFigures.length });
+        }
         dispatch({ type: 'NEXT_FIGURE' });
-    }, []);
+    }, [currentFigureIndex, mode, score, shuffledFigures.length]);
 
     // Restart game
     const restartGame = useCallback(() => {
         const enabledFigures = getEnabledFigures();
         const shuffled = shuffleArray(enabledFigures);
         dispatch({ type: 'RESTART_GAME', payload: { figures: shuffled } });
-    }, []);
+        track('game_restarted', { mode });
+    }, [mode]);
 
     // Start game (from welcome modal)
     const handleStartGame = useCallback(() => {
         dispatch({ type: 'START_GAME' });
-    }, []);
+        track('game_started', { mode, figures: shuffledFigures.length });
+    }, [mode, shuffledFigures.length]);
+
+    // Switch between Classic and AI mode. Mid-game switches restart the game
+    // because the two modes score rounds differently.
+    const setMode = useCallback((nextMode: GameMode) => {
+        if (nextMode === mode) return;
+        if (nextMode === 'ai' && !aiAvailable) return;
+
+        rememberGameMode(nextMode);
+        const midGame = !showWelcome && !gameEnded;
+        if (midGame) {
+            dispatch({ type: 'RESTART_GAME', payload: { figures: shuffleArray(getEnabledFigures()), mode: nextMode } });
+        } else {
+            dispatch({ type: 'SET_MODE', payload: { mode: nextMode } });
+        }
+        track('mode_changed', { mode: nextMode, mid_game: midGame });
+    }, [aiAvailable, gameEnded, mode, showWelcome]);
 
     // Show/hide documentation
     const handleShowDocs = useCallback(() => {
@@ -415,7 +485,8 @@ export function useGame() {
 
     const handleGiveUp = useCallback(() => {
         dispatch({ type: 'GIVE_UP' });
-    }, []);
+        track('gave_up', { mode, round });
+    }, [mode, round]);
 
     return {
         // State
@@ -435,6 +506,9 @@ export function useGame() {
         triggerShake,
         adaptiveHintNotice,
         llmMode,
+        mode,
+        aiStatus,
+        aiAvailable,
         messages,
         questionsAsked,
         isTyping,
@@ -444,6 +518,7 @@ export function useGame() {
         currentFigure,
         lastRoundBreakdown,
         lastRoundNumber,
+        guessTokens,
 
         // Actions
         revealNextClue,
@@ -452,6 +527,7 @@ export function useGame() {
         nextFigure,
         restartGame,
         handleStartGame,
+        setMode,
         handleShowDocs,
         handleCloseDocs,
         resetConversation,

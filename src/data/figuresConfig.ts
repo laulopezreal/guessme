@@ -7,6 +7,10 @@ export interface HistoricFigureConfig extends HistoricFigure {
 /**
  * Figure Configuration
  *
+ * This file is the single source of truth for the roster. It is imported by
+ * the React app and by the Cloudflare Worker that proxies AI requests, so it
+ * must stay free of browser-only or Node-only code.
+ *
  * To add a new figure:
  * 1. Add a new object to the array below
  * 2. Set enabled: true when ready
@@ -23,7 +27,9 @@ export const allFigures: HistoricFigureConfig[] = [
   {
     enabled: true,
     name: "Albert Einstein",
-    alternateNames: ["einstein"],
+    alternateNames: ["einstein", "albert", "albert einstein"],
+    eraTags: ["Modern Era", "Physics"],
+    voiceLine: "Imagination will take you everywhere—ready for your next thought experiment?",
     clues: [
       { text: "I was born in Germany in 1879.", difficulty: 'hard' },
       { text: "I won the Nobel Prize in Physics in 1921.", difficulty: 'medium' },
@@ -35,7 +41,9 @@ export const allFigures: HistoricFigureConfig[] = [
   {
     enabled: true,
     name: "Marie Curie",
-    alternateNames: ["curie", "marie sklodowska-curie"],
+    alternateNames: ["curie", "marie", "marie curie", "madame curie", "marie sklodowska-curie", "sklodowska"],
+    eraTags: ["Industrial Age", "Chemistry"],
+    voiceLine: "Nothing in life is to be feared—it is only to be understood. Onward?",
     clues: [
       { text: "I was born in Poland in 1867.", difficulty: 'hard' },
       { text: "I was the first woman to win a Nobel Prize.", difficulty: 'medium' },
@@ -47,7 +55,9 @@ export const allFigures: HistoricFigureConfig[] = [
   {
     enabled: true,
     name: "Leonardo da Vinci",
-    alternateNames: ["leonardo", "da vinci"],
+    alternateNames: ["leonardo", "da vinci", "leonardo da vinci"],
+    eraTags: ["Renaissance", "Art & Invention"],
+    voiceLine: "Simplicity is the ultimate sophistication. Ready for another masterpiece?",
     clues: [
       { text: "I was born in Italy in 1452.", difficulty: 'hard' },
       { text: "I was a polymath: artist, scientist, engineer, and inventor.", difficulty: 'medium' },
@@ -59,7 +69,9 @@ export const allFigures: HistoricFigureConfig[] = [
   {
     enabled: true,
     name: "William Shakespeare",
-    alternateNames: ["shakespeare"],
+    alternateNames: ["shakespeare", "william", "william shakespeare"],
+    eraTags: ["Elizabethan", "Literature"],
+    voiceLine: "All the world's a stage—shall we play another round?",
     clues: [
       { text: "I was born in Stratford-upon-Avon, England in 1564.", difficulty: 'hard' },
       { text: "I am considered the greatest writer in the English language.", difficulty: 'medium' },
@@ -71,7 +83,9 @@ export const allFigures: HistoricFigureConfig[] = [
   {
     enabled: true,
     name: "Nikola Tesla",
-    alternateNames: ["tesla"],
+    alternateNames: ["tesla", "nikola", "nikola tesla"],
+    eraTags: ["Industrial Age", "Engineering"],
+    voiceLine: "The present is theirs; the future is mine. Ready to spark another idea?",
     clues: [
       { text: "I was born in the Austrian Empire (modern-day Croatia) in 1856.", difficulty: 'hard' },
       { text: "I was a brilliant inventor and electrical engineer.", difficulty: 'medium' },
@@ -80,11 +94,12 @@ export const allFigures: HistoricFigureConfig[] = [
       { text: "The Tesla coil and the unit of magnetic flux density (tesla) are named after me.", difficulty: 'easy' }
     ]
   },
-  // Additional figures (disabled by default for testing)
   {
-    enabled: false,
+    enabled: true,
     name: "Galileo Galilei",
-    alternateNames: ["galileo"],
+    alternateNames: ["galileo", "galilei", "galileo galilei"],
+    eraTags: ["Renaissance", "Astronomy"],
+    voiceLine: "And yet it moves. Care to observe more?",
     clues: [
       { text: "I was born in Pisa, Italy in 1564.", difficulty: 'hard' },
       { text: "I am known as the father of modern observational astronomy.", difficulty: 'medium' },
@@ -94,9 +109,11 @@ export const allFigures: HistoricFigureConfig[] = [
     ]
   },
   {
-    enabled: false,
+    enabled: true,
     name: "Isaac Newton",
-    alternateNames: ["newton"],
+    alternateNames: ["newton", "isaac", "isaac newton"],
+    eraTags: ["Scientific Revolution", "Mathematics"],
+    voiceLine: "If I have seen further, it is by standing on shoulders—care to climb higher?",
     clues: [
       { text: "I was born in England in 1643.", difficulty: 'hard' },
       { text: "I formulated the laws of motion and universal gravitation.", difficulty: 'medium' },
@@ -106,9 +123,11 @@ export const allFigures: HistoricFigureConfig[] = [
     ]
   },
   {
-    enabled: false,
+    enabled: true,
     name: "Napoleon Bonaparte",
-    alternateNames: ["napoleon"],
+    alternateNames: ["napoleon", "bonaparte", "napoleon bonaparte"],
+    eraTags: ["Napoleonic Era", "Military"],
+    voiceLine: "Impossible is a word to be found only in the dictionary of fools. March to the next battle?",
     clues: [
       { text: "I was born on the island of Corsica in 1769.", difficulty: 'hard' },
       { text: "I became Emperor of France in 1804.", difficulty: 'medium' },
@@ -118,9 +137,11 @@ export const allFigures: HistoricFigureConfig[] = [
     ]
   },
   {
-    enabled: false,
+    enabled: true,
     name: "Joan of Arc",
-    alternateNames: ["joan", "jeanne d'arc"],
+    alternateNames: ["joan", "joan of arc", "jeanne d'arc", "saint joan"],
+    eraTags: ["Middle Ages", "Leadership"],
+    voiceLine: "I am not afraid—I was born to do this. Shall we ride again?",
     clues: [
       { text: "I was a peasant girl born in France around 1412.", difficulty: 'hard' },
       { text: "I claimed to receive visions from God telling me to support France.", difficulty: 'medium' },
@@ -130,9 +151,11 @@ export const allFigures: HistoricFigureConfig[] = [
     ]
   },
   {
-    enabled: false,
+    enabled: true,
     name: "Queen Elizabeth I",
-    alternateNames: ["elizabeth i", "elizabeth", "queen elizabeth"],
+    alternateNames: ["elizabeth i", "elizabeth", "queen elizabeth", "queen elizabeth i", "elizabeth tudor"],
+    eraTags: ["Elizabethan", "Statesmanship"],
+    voiceLine: "I know I have the body of a weak and feeble woman, but the heart of a king. Ready for another reign?",
     clues: [
       { text: "I was born in England in 1533.", difficulty: 'hard' },
       { text: "I became Queen of England in 1558 and ruled for 45 years.", difficulty: 'medium' },
@@ -143,13 +166,37 @@ export const allFigures: HistoricFigureConfig[] = [
   }
 ];
 
+function toFigure(config: HistoricFigureConfig): HistoricFigure {
+  const { name, alternateNames, clues, eraTags, voiceLine } = config;
+  return { name, alternateNames, clues, eraTags, voiceLine };
+}
+
+/**
+ * Stable, URL-safe identifier derived from a figure's name.
+ * The client sends this to the AI API instead of the full figure data.
+ */
+export function figureId(name: string): string {
+  return name
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 /**
  * Get all enabled figures for gameplay
  */
 export function getEnabledFigures(): HistoricFigure[] {
-  return allFigures
-    .filter(figure => figure.enabled)
-    .map(({ enabled, ...figure }) => figure);
+  return allFigures.filter(figure => figure.enabled).map(toFigure);
+}
+
+/**
+ * Look up an enabled figure by its id (see `figureId`).
+ */
+export function getFigureById(id: string): HistoricFigure | undefined {
+  const match = allFigures.find(figure => figure.enabled && figureId(figure.name) === id);
+  return match ? toFigure(match) : undefined;
 }
 
 /**
@@ -165,4 +212,4 @@ export function getFigureCount(): { enabled: number; total: number } {
 /**
  * Export the raw figure data (without `enabled`) for tooling/tests that need the full list.
  */
-export const historicFigures: HistoricFigure[] = allFigures.map(({ enabled, ...rest }) => rest);
+export const historicFigures: HistoricFigure[] = allFigures.map(toFigure);

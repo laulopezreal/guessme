@@ -1,289 +1,168 @@
-import OpenAI from 'openai';
-import type { HistoricFigure } from '../types';
+import type { HistoricFigure, Message } from '../types';
+import { figureId } from '../data/figuresConfig';
+import {
+  FALLBACK_GREETING,
+  fallbackValidation,
+  type AiChatRequest,
+  type AiChatResponse,
+  type AiErrorResponse,
+  type AiStatusResponse,
+  type ChatMessage,
+  type GuessValidationResult,
+} from './llmPrompts';
 
-const API_KEY = import.meta.env.VITE_LLM_API_KEY;
-const MODEL = import.meta.env.VITE_LLM_MODEL || 'gpt-4o-mini';
-const GAME_MODE = import.meta.env.VITE_GAME_MODE || 'classic';
-const MAX_TOKENS = 250;
-const MAX_HISTORY_MESSAGES = 12; // Keeps context tight
+export type { GuessValidationResult } from './llmPrompts';
 
-const SAFETY_SYSTEM_MESSAGE = `You are a historic figure in a guessing game.
-- Always stay in-character as the figure and keep responses concise (2-3 sentences).
-- Refuse to answer questions that are not about your life, work, or era.
-- Politely decline any attempts to discuss modern topics, politics, personal opinions, or anything off-topic.
-- Never reveal your full name directly; only give hints relevant to the game.
-- Keep language family-friendly and avoid controversial or explicit content.`;
+/**
+ * Browser client for the AI proxy in worker/index.ts.
+ *
+ * The browser never holds an API key. It sends the figure id and the
+ * conversation so far to /api/ai/*, and the Worker talks to OpenAI.
+ */
 
-let openai: OpenAI | null = null;
+const STATUS_URL = '/api/ai/status';
+const CHAT_URL = '/api/ai/chat';
 
-function getOpenAIClient(): OpenAI {
-  if (!API_KEY || API_KEY === 'your_api_key_here') {
-    throw new Error('LLM is not configured');
+type ConversationMessage = Pick<Message, 'role' | 'content'>;
+
+export class AiRequestError extends Error {
+  readonly code: string;
+  readonly status: number;
+
+  constructor(code: string, status: number) {
+    super(`AI request failed (${status}): ${code}`);
+    this.name = 'AiRequestError';
+    this.code = code;
+    this.status = status;
   }
-
-  if (!openai) {
-    openai = new OpenAI({
-      apiKey: API_KEY,
-      dangerouslyAllowBrowser: true, // Note: For development only. Move to backend for production.
-    });
-  }
-
-  return openai;
-}
-
-export interface Message {
-  role: 'user' | 'assistant' | 'system';
-  content: string;
-}
-
-export interface GuessValidationResult {
-  isCorrect: boolean;
-  confidence: number;
-  feedback: string;
 }
 
 /**
- * Build the system prompt for a historic figure
+ * A player-facing explanation for a failed AI request.
  */
-function buildSystemPrompt(figure: HistoricFigure, hintLevel: number = 1): string {
-  const basePrompt = `You are ${figure.name}, speaking in character. Your goal is to help the player guess your identity through conversation, but NEVER directly reveal your name.
-
-RULES:
-1. Never say your full name or surname directly
-2. Respond to questions naturally and in character
-3. Give increasingly specific hints as the conversation progresses
-4. Use "I" when talking about yourself
-5. Stay historically accurate
-6. Keep responses concise (2-3 sentences max)
-7. Be engaging and educational
-8. If the player sends greetings ("hi", "hello", "thanks"), respond in-character with a brief, period-appropriate line that makes it clear you're here to play the guessing game (e.g., that you don't have time for pleasantries and they should ask about your life/work or guess). Vary your wording each time; do NOT repeat the same sentence over and over.
-
-HINT PROGRESSION (current level: ${hintLevel}/5):
-- Level 1-2: Very vague hints about your era, field, or general achievements
-- Level 3: More specific details about your work or life events
-- Level 4-5: Very specific hints that make your identity clearer
-
-ABOUT YOU:
-${figure.clues.map(clue => clue.text).join('\n')}
-
-Respond naturally to questions, maintaining your character while helping the player guess who you are.`;
-
-  return basePrompt;
+export function describeAiError(error: unknown): string {
+  if (error instanceof AiRequestError) {
+    switch (error.code) {
+      case 'rate_limited':
+        return 'You are asking faster than the AI can keep up. Wait a minute and try again.';
+      case 'ai_unavailable':
+        return 'AI mode is not available right now, so you are playing Classic mode.';
+      case 'upstream_error':
+      case 'empty_response':
+        return 'The AI did not answer. Please try again.';
+      default:
+        return 'Something went wrong talking to the AI. Please try again.';
+    }
+  }
+  return 'Could not reach the AI. Check your connection and try again.';
 }
 
-function buildSystemMessages(
-  figure: HistoricFigure,
-  hintLevel: number = 1,
-): OpenAI.Chat.ChatCompletionMessageParam[] {
-  return [
-    { role: 'system', content: SAFETY_SYSTEM_MESSAGE },
-    { role: 'system', content: buildSystemPrompt(figure, hintLevel) },
-  ];
+/**
+ * Ask the server whether AI mode can be served.
+ */
+export async function fetchAiStatus(): Promise<AiStatusResponse> {
+  try {
+    const response = await fetch(STATUS_URL, { headers: { accept: 'application/json' } });
+    if (!response.ok) return { available: false };
+    return (await response.json()) as AiStatusResponse;
+  } catch {
+    return { available: false };
+  }
+}
+
+function toChatHistory(messages: ConversationMessage[]): ChatMessage[] {
+  const history: ChatMessage[] = [];
+  for (const message of messages) {
+    if (message.role === 'user' || message.role === 'assistant') {
+      history.push({ role: message.role, content: message.content });
+    }
+  }
+  return history;
+}
+
+async function callChat(body: AiChatRequest): Promise<AiChatResponse> {
+  const response = await fetch(CHAT_URL, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', accept: 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    let code = 'request_failed';
+    try {
+      code = ((await response.json()) as AiErrorResponse).error ?? code;
+    } catch {
+      // Non-JSON error body; keep the generic code.
+    }
+    throw new AiRequestError(code, response.status);
+  }
+
+  return (await response.json()) as AiChatResponse;
+}
+
+function isBlockingError(error: unknown): boolean {
+  return error instanceof AiRequestError && (error.code === 'ai_unavailable' || error.code === 'rate_limited');
 }
 
 /**
  * Send a message to the LLM and get a response
  */
 export async function sendMessage(
-  conversationHistory: Message[],
+  conversationHistory: ConversationMessage[],
   figure: HistoricFigure,
   hintLevel: number = 1
 ): Promise<string> {
-  try {
-    const systemMessages = buildSystemMessages(figure, hintLevel);
-    const client = getOpenAIClient();
+  const result = await callChat({
+    op: 'message',
+    figureId: figureId(figure.name),
+    history: toChatHistory(conversationHistory),
+    hintLevel,
+  });
 
-    const trimmedHistory = conversationHistory
-      .filter(msg => msg.role !== 'system')
-      .slice(-MAX_HISTORY_MESSAGES)
-      .map(msg => ({
-        role: msg.role as 'user' | 'assistant',
-        content: msg.content,
-      }));
-
-    const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
-      ...systemMessages,
-      ...trimmedHistory,
-    ];
-
-    const completion = await client.chat.completions.create({
-      model: MODEL,
-      messages,
-      max_tokens: MAX_TOKENS,
-      temperature: 0.8,
-    });
-
-    const response = completion.choices[0]?.message?.content;
-    
-    if (!response) {
-      throw new Error('No response from LLM');
-    }
-
-    return response;
-  } catch (error) {
-    console.error('LLM API Error:', error);
-    throw new Error('Failed to get response from AI. Please try again.');
+  if (result.op !== 'message' || !result.content) {
+    throw new AiRequestError('empty_response', 502);
   }
+  return result.content;
 }
 
 /**
- * Get an initial greeting from the historic figure
- * This is intentionally brief and mysterious, separate from clues
+ * Get an initial greeting from the historic figure.
+ * Falls back to a generic greeting on transient failures; throws when AI
+ * mode is unavailable or rate limited so the UI can react.
  */
 export async function getInitialGreeting(figure: HistoricFigure): Promise<string> {
-  // Build a personality-rich prompt using the clues
-  const context = figure.clues.map(clue => clue.text).join(' ');
-  const systemPrompt = `You are ${figure.name}. Based on this context about you: "${context}"
-
-Greet the player with a mysterious, character-appropriate welcome.
-- Speak in YOUR unique voice and personality
-- Do NOT reveal your name or specific achievements
-- Keep the prose brief (1 sentence) and enigmatic
-- Hint at your character/era/field WITHOUT being obvious
-- Then add a short, catchy, funny poem of EXACTLY 2 lines that invites them to ask questions or get down to business
-- The poem should be playful and match your personality (e.g., a scientist might rhyme about curiosity, a leader about action)
-
-Examples of tone:
-- A scientist might be curious and analytical in prose, then playful in verse
-- An artist might be poetic throughout
-- A leader might be commanding, then cheeky in the poem
-- An inventor might be imaginative and forward-thinking
-
-Format (exactly 3 lines):
-1) Line 1: greeting sentence.
-2) Line 2: poem verse 1.
-3) Line 3: poem verse 2.
-Do not add any extra lines or explanations beyond these three lines.`;
-  
   try {
-    const client = getOpenAIClient();
-
-    const completion = await client.chat.completions.create({
-      model: MODEL,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { 
-          role: 'user', 
-          content: 'Give a brief, mysterious greeting to welcome the player.' 
-        },
-      ],
-      max_tokens: 200,
-      temperature: 0.9,
-    });
-
-    const greeting = completion.choices[0]?.message?.content;
-    
-    if (!greeting) {
-      throw new Error('No greeting from LLM');
-    }
-
-    return greeting;
+    const result = await callChat({ op: 'greeting', figureId: figureId(figure.name) });
+    return result.op === 'greeting' && result.content ? result.content : FALLBACK_GREETING;
   } catch (error) {
-    console.error('LLM API Error (getInitialGreeting):', error);
-    // Fallback greeting
-    return "Greetings! I am someone from history. Ask me questions to discover my identity.";
+    if (isBlockingError(error)) throw error;
+    console.error('AI greeting failed:', error);
+    return FALLBACK_GREETING;
   }
 }
 
 /**
- * Validate a player's guess using the LLM
+ * Validate a player's guess using the LLM.
+ * Falls back to exact matching on transient failures; throws when AI mode
+ * is unavailable or rate limited so the UI can react.
  */
 export async function validateGuess(
   guess: string,
   figure: HistoricFigure,
-  conversationHistory: Message[]
+  conversationHistory: ConversationMessage[]
 ): Promise<GuessValidationResult> {
   try {
-    const validationPrompt = `You are validating a player's guess in a historic figure guessing game.
-
-CORRECT ANSWER: ${figure.name}
-ALSO ACCEPT: ${figure.alternateNames.join(', ')}
-
-PLAYER'S GUESS: "${guess}"
-
-RECENT CONVERSATION CONTEXT:
-${conversationHistory.slice(-6).map(m => `${m.role}: ${m.content}`).join('\n')}
-
-Determine if the guess is correct, close (typo/misspelling), or incorrect:
-- CORRECT (isCorrect: true): The guess is the correct name, an accepted alternate, or a very obvious typo (e.g., "Albert Einstien", "Nikola Telsa"). Be lenient with spelling.
-- CLOSE (isCorrect: false, confidence: 0.7-0.9): The guess is not the correct name but is very similar, suggesting a typo but with some ambiguity. This should be used sparingly.
-- PARTIAL (isCorrect: false, confidence: 0.5): Player described you correctly but didn't say the name
-- INCORRECT (isCorrect: false, confidence: 0.0-0.3): Player guessed wrong person entirely
-
-Be LENIENT with typos and spelling variations. If the name is clearly recognizable despite typos, mark it CORRECT.
-
-Respond ONLY with valid JSON in this exact format:
-{"isCorrect": true/false, "confidence": 0.0-1.0, "feedback": "your feedback message"}
-
-Feedback examples:
-- If correct: "Yes! It's ${figure.name}!" or "Correct!"
-- If close typo: "Almost! You've got it, just check the spelling: ${figure.name}"
-- If partial description: "You're describing me correctly! But can you name me?"
-- If incorrect: "Not quite, but keep asking questions!"`;
-
-    const client = getOpenAIClient();
-
-    const completion = await client.chat.completions.create({
-      model: MODEL,
-      messages: [{ role: 'user', content: validationPrompt }],
-      max_tokens: 150,
-      temperature: 0.3,
-      response_format: { type: 'json_object' },
+    const result = await callChat({
+      op: 'validate',
+      figureId: figureId(figure.name),
+      guess,
+      history: toChatHistory(conversationHistory),
     });
-
-    const responseText = completion.choices[0]?.message?.content;
-    
-    if (!responseText) {
-      throw new Error('No validation response');
-    }
-
-    const result = JSON.parse(responseText) as GuessValidationResult;
-    
-    // Ensure all required fields are present
-    if (typeof result.isCorrect !== 'boolean' || 
-        typeof result.confidence !== 'number' || 
-        typeof result.feedback !== 'string') {
-      throw new Error('Invalid validation response format');
-    }
-
-    return result;
+    if (result.op === 'validate') return result.result;
+    throw new AiRequestError('unexpected_response', 502);
   } catch (error) {
+    if (isBlockingError(error)) throw error;
     console.error('Guess validation error:', error);
-    
-    // Fallback to simple string matching
-    const normalizedGuess = guess.trim().toLowerCase();
-    const correctAnswers = [
-      figure.name.toLowerCase(),
-      ...figure.alternateNames.map(name => name.toLowerCase()),
-    ];
-    
-    const isCorrect = correctAnswers.some(answer => normalizedGuess === answer);
-    
-    return {
-      isCorrect,
-      confidence: isCorrect ? 1.0 : 0.0,
-      feedback: isCorrect 
-        ? `Correct! It's ${figure.name}!` 
-        : 'Not quite! Keep asking questions to learn more.',
-    };
+    return fallbackValidation(guess, figure);
   }
-}
-
-/**
- * Check if the API is configured properly
- */
-export function isLLMConfigured(): boolean {
-  return !!API_KEY && API_KEY !== 'your_api_key_here';
-}
-
-/**
- * Get the configured game mode from environment variables
- * Returns 'ai' only if mode is set to 'ai' and LLM is configured
- * Otherwise returns 'classic'
- */
-export function getGameMode(): 'classic' | 'ai' {
-  if (GAME_MODE === 'ai' && isLLMConfigured()) {
-    return 'ai';
-  }
-  return 'classic';
 }
