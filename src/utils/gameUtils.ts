@@ -311,16 +311,57 @@ function seededShuffle<T>(items: readonly T[], seed: number): T[] {
   return shuffled;
 }
 
+/** What the daily schedule needs to know about a roster entry. */
+export interface DailyEntry {
+  /** The first UTC date the figure may be scheduled: it joins the first cycle that starts on or after this date. */
+  dailyFrom: string;
+  /** A disabled figure keeps its slots and a stand-in plays them, so pulling it moves nobody else's day. */
+  enabled: boolean;
+}
+
+interface DailyCycle<T> {
+  index: number;
+  /** The cycle's first day, counted from the epoch. */
+  start: number;
+  members: T[];
+  previousMembers: T[];
+}
+
 /**
- * The order figures appear in during one cycle of `roster.length` days.
+ * The cycle a day falls in. Cycles run back to back from the epoch, and each
+ * one takes the figures whose `dailyFrom` had arrived on its first day, so a
+ * figure added later only changes cycles that have not started.
+ */
+function findCycle<T extends DailyEntry>(dayIndex: number, roster: readonly T[], epoch: string): DailyCycle<T> | null {
+  const membersOn = (day: number) => roster.filter(entry => dailyNumber(entry.dailyFrom, epoch) - 1 <= day);
+
+  const launch = membersOn(0);
+  if (launch.length === 0) return null;
+
+  // Before the epoch, which only a wrong device clock can reach, the launch roster repeats backwards.
+  if (dayIndex < 0) {
+    const index = Math.floor(dayIndex / launch.length);
+    return { index, start: index * launch.length, members: launch, previousMembers: launch };
+  }
+
+  let cycle: DailyCycle<T> = { index: 0, start: 0, members: launch, previousMembers: launch };
+  while (dayIndex >= cycle.start + cycle.members.length) {
+    const start = cycle.start + cycle.members.length;
+    cycle = { index: cycle.index + 1, start, members: membersOn(start), previousMembers: cycle.members };
+  }
+  return cycle;
+}
+
+/**
+ * The order figures appear in during one cycle.
  * When a cycle would open with the figure that closed the previous one, the
  * first two days swap so no figure runs two days in a row (rosters of three
  * or more; the swap never touches the last day, so the check stays local).
  */
-function cycleOrder<T>(roster: readonly T[], cycle: number, epoch: string): T[] {
-  const order = seededShuffle(roster, hashString(`${epoch}#${cycle}`));
+function cycleOrder<T>({ index, members, previousMembers }: DailyCycle<T>, epoch: string): T[] {
+  const order = seededShuffle(members, hashString(`${epoch}#${index}`));
   if (order.length > 2) {
-    const previous = seededShuffle(roster, hashString(`${epoch}#${cycle - 1}`));
+    const previous = seededShuffle(previousMembers, hashString(`${epoch}#${index - 1}`));
     if (order[0] === previous[previous.length - 1]) {
       [order[0], order[1]] = [order[1], order[0]];
     }
@@ -329,17 +370,29 @@ function cycleOrder<T>(roster: readonly T[], cycle: number, epoch: string): T[] 
 }
 
 /**
- * The figure for a UTC date. Days are grouped into cycles as long as the
- * roster and each cycle is its own deterministic shuffle, so a figure never
- * repeats until every other figure has had its day. The same date and roster
- * give the same figure on every device, with no server involved.
+ * The figure for a UTC date. Each cycle is its own deterministic shuffle, so a
+ * figure never repeats until every other figure has had its day, and the same
+ * date gives the same figure on every device with no server involved.
+ *
+ * Pass the full roster, disabled figures included. The shuffle works on array
+ * positions, so the schedule survives added and renamed figures, but not
+ * reordered or deleted ones (see FIGURES.md).
  */
-export function selectDailyFigure<T>(dateKey: string, roster: readonly T[], epoch = DAILY_EPOCH): T | undefined {
-  if (roster.length === 0) return undefined;
+export function selectDailyFigure<T extends DailyEntry>(dateKey: string, roster: readonly T[], epoch = DAILY_EPOCH): T | undefined {
   const dayIndex = dailyNumber(dateKey, epoch) - 1;
-  const cycle = Math.floor(dayIndex / roster.length);
-  const position = ((dayIndex % roster.length) + roster.length) % roster.length;
-  return cycleOrder(roster, cycle, epoch)[position];
+  const cycle = findCycle(dayIndex, roster, epoch);
+  if (!cycle) return undefined;
+
+  const order = cycleOrder(cycle, epoch);
+  const position = dayIndex - cycle.start;
+  if (order[position].enabled) return order[position];
+
+  // Stand-ins come from about half a cycle away, so nobody plays two days running.
+  for (let step = 0; step < order.length; step++) {
+    const standIn = order[(position + Math.floor(order.length / 2) + step) % order.length];
+    if (standIn.enabled) return standIn;
+  }
+  return undefined;
 }
 
 export interface DailyPuzzle<T> {
@@ -348,8 +401,8 @@ export interface DailyPuzzle<T> {
   figure: T;
 }
 
-/** The puzzle for the UTC day containing `now`, or null when the roster is empty. */
-export function getDailyPuzzle<T>(roster: readonly T[], now: Date): DailyPuzzle<T> | null {
+/** The puzzle for the UTC day containing `now`, or null when there is no figure to schedule. */
+export function getDailyPuzzle<T extends DailyEntry>(roster: readonly T[], now: Date): DailyPuzzle<T> | null {
   const dateKey = utcDateKey(now);
   const figure = selectDailyFigure(dateKey, roster);
   return figure === undefined ? null : { dateKey, dayNumber: dailyNumber(dateKey), figure };
