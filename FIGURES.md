@@ -10,8 +10,10 @@ This file is shared with the Cloudflare Worker that powers AI Mode, so it must s
 
 ## Current Status
 
-- **Enabled Figures**: 10
-- **Total Figures**: 10
+- **Enabled Figures**: 60
+- **Total Figures**: 60
+
+The daily puzzle cycles through the enabled roster one figure per day, so every figure added pushes the first repeat further out.
 
 ## Adding a New Figure
 
@@ -57,11 +59,14 @@ clues: [
 ]
 ```
 
-**Alternate Names**: Include all reasonable variations
+**Alternate Names**: Include all reasonable variations, all lower-case
 - Last name only: `["einstein"]`
 - Full name variations: `["marie curie", "marie sklodowska-curie"]`
 - Nicknames: `["leonardo", "da vinci"]`
 - Titles: `["queen elizabeth", "elizabeth i"]`
+- Unaccented and native spellings: `["simon bolivar"]`, `["ibn sina"]`
+
+Every alternate name is a full-credit answer on its own, so leave out bare titles and epithets (`"king"`, `"the great"`) that could point at several figures. Classic mode already refuses a partial match made only of such words (see `NAME_TOKEN_STOPWORDS` in `src/utils/gameUtils.ts`), and AI mode uses the same list to tell a question like "were you great?" from a guess.
 
 ## Editing a Figure
 
@@ -111,7 +116,8 @@ Delete the entire object from the array. **Warning**: This permanently removes t
    - **Guess Validation**: Try various name formats to ensure alternate names work
 
 3. Run `npm test`:
-   - `src/data/figuresConfig.test.ts` checks every figure has exactly five clues and a unique id
+   - `src/data/figuresConfig.test.ts` checks every figure has exactly five clues, at least one `easy` clue, a unique id, a voice line and era tags, lower-case alternate names, and that no clue contains the name or an alternate name; it also requires at least 50 enabled figures
+   - `src/utils/gameUtils.test.ts` checks guess matching against the roster (titles and epithets alone never win)
    - The "How to Play" overlay shows how many figures are enabled
 
 ## Best Practices
@@ -125,7 +131,8 @@ Delete the entire object from the array. **Warning**: This permanently removes t
 - Include diverse types of info (when/where, achievements, famous works, personal traits)
 
 ❌ **Don't**:
-- Reveal the name directly
+- Reveal the name directly (a test fails if a clue contains the name or any alternate name, so "the Elizabethan era" cannot be a clue for Elizabeth I)
+- Name another figure from the roster as if they were the answer; mentioning them as an ally or rival is fine
 - Make clues too easy at the start
 - Make clues too obscure at the end
 - Include controversial or sensitive information
@@ -162,6 +169,56 @@ In AI Mode the Worker builds the figure's system prompt from your clues, so they
 8. Napoleon Bonaparte
 9. Joan of Arc
 10. Queen Elizabeth I
+11. Hatshepsut
+12. Tutankhamun
+13. Cleopatra
+14. Confucius
+15. Socrates
+16. Archimedes
+17. Alexander the Great
+18. Julius Caesar
+19. Boudica
+20. Wu Zetian
+21. Murasaki Shikibu
+22. Avicenna
+23. Mansa Musa
+24. Marco Polo
+25. Ibn Battuta
+26. Zheng He
+27. Johannes Gutenberg
+28. Michelangelo
+29. Suleiman the Magnificent
+30. Montezuma II
+31. Wolfgang Amadeus Mozart
+32. Ludwig van Beethoven
+33. Catherine the Great
+34. George Washington
+35. Simón Bolívar
+36. Jane Austen
+37. Charles Darwin
+38. Abraham Lincoln
+39. Harriet Tubman
+40. Florence Nightingale
+41. Ada Lovelace
+42. Vincent van Gogh
+43. Louis Pasteur
+44. Hokusai
+45. Queen Victoria
+46. Mahatma Gandhi
+47. Winston Churchill
+48. Amelia Earhart
+49. Frida Kahlo
+50. Alan Turing
+51. Anne Frank
+52. Rosa Parks
+53. Martin Luther King Jr.
+54. Nelson Mandela
+55. Yuri Gagarin
+56. Pablo Picasso
+57. Wangari Maathai
+58. Helen Keller
+59. Neil Armstrong
+60. Agatha Christie
 
 ## Function Reference
 

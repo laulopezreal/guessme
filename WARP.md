@@ -70,7 +70,7 @@ npm test             # Vitest in watch mode
 npx vitest run       # Single pass
 ```
 
-Suites: `src/reducers/gameReducer.test.ts` (state transitions, including the daily puzzle), `src/utils/gameUtils.test.ts` (daily figure selection, share text), `src/services/dailyStats.test.ts` and `src/services/dailyProgress.test.ts` (streaks, resume, localStorage), `src/data/figuresConfig.test.ts` (roster integrity, guess tokens), `worker/index.test.ts` (the proxy against a mocked OpenAI endpoint).
+Suites: `src/reducers/gameReducer.test.ts` (state transitions, including the daily puzzle), `src/utils/gameUtils.test.ts` (guess matching, daily figure selection, share text), `src/services/dailyStats.test.ts` and `src/services/dailyProgress.test.ts` (streaks, resume, localStorage), `src/data/figuresConfig.test.ts` (roster integrity, guess tokens), `worker/index.test.ts` (the proxy against a mocked OpenAI endpoint).
 
 ## Code Architecture
 
@@ -178,4 +178,4 @@ These files are kept for reference but are not used by the React build.
 ## Next Steps
 
 - A paid tier beyond the three free daily questions, metered in the Worker (KV or Durable Object counters) instead of the browser
-- Grow the roster well beyond ten figures
+- Keep growing the roster (60 figures today) so the daily puzzle cycles less often than every two months

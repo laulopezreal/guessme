@@ -163,21 +163,55 @@ export function levenshteinDistance(a: string, b: string): number {
   return matrix[b.length][a.length];
 }
 
+/**
+ * Lowercase words that never identify a figure on their own: articles,
+ * particles, titles and epithets. They are dropped from the AI-mode guess
+ * tokens and never satisfy a partial match in Classic mode, so "queen",
+ * "king" or "great" alone cannot solve a figure.
+ */
+const NAME_TOKEN_STOPWORDS = new Set([
+  'the', 'of', 'and', 'von', 'van', 'della',
+  'queen', 'king', 'emperor', 'empress', 'saint', 'lord', 'lady', 'sir', 'dame',
+  'prince', 'princess', 'duke', 'duchess', 'pope', 'general', 'president', 'doctor', 'madame',
+  'great', 'magnificent', 'conqueror', 'jr',
+]);
+
+/**
+ * The words of a name that are long and specific enough to point at a
+ * figure: four or more letters and not a stopword.
+ */
+function distinctiveNameTokens(name: string): string[] {
+  return name
+    .toLowerCase()
+    .split(/\s+/)
+    .map(word => word.replace(/[^\p{L}'-]/gu, ''))
+    .filter(token => token.length >= 4 && !NAME_TOKEN_STOPWORDS.has(token));
+}
+
 export function isCloseMatch(guess: string, answer: string): boolean {
   const normalizedGuess = guess.trim().toLowerCase();
   const normalizedAnswer = answer.trim().toLowerCase();
 
   if (normalizedGuess === normalizedAnswer) return true;
 
-  // Check for partial match (e.g. "Einstein" in "Albert Einstein")
-  // But only if the guess is at least 4 chars to avoid matching short common words
-  if (normalizedGuess.length >= 4 && normalizedAnswer.includes(normalizedGuess)) {
+  // Partial match (e.g. "Einstein" in "Albert Einstein"). The contained text
+  // must be at least 4 characters and carry a distinctive name token, so a
+  // bare title or epithet ("queen", "king", "great") never wins on its own.
+  if (
+    normalizedGuess.length >= 4 &&
+    normalizedAnswer.includes(normalizedGuess) &&
+    distinctiveNameTokens(normalizedGuess).length > 0
+  ) {
     return true;
   }
 
-  // Check for reverse partial match (e.g. "Albert Einstein" contains "Einstein")
-  // This covers cases where the user might type the full name when only the last name is expected, though usually it's the other way around.
-  if (normalizedAnswer.length >= 4 && normalizedGuess.includes(normalizedAnswer)) {
+  // Reverse partial match (e.g. the guess "Albert Einstein" contains the
+  // answer "Einstein"), under the same distinctive-token rule.
+  if (
+    normalizedAnswer.length >= 4 &&
+    normalizedGuess.includes(normalizedAnswer) &&
+    distinctiveNameTokens(normalizedAnswer).length > 0
+  ) {
     return true;
   }
 
@@ -189,26 +223,18 @@ export function isCloseMatch(guess: string, answer: string): boolean {
   return distance <= maxErrors;
 }
 
-const NAME_TOKEN_STOPWORDS = new Set([
-  'the', 'of', 'and', 'von', 'van', 'della',
-  'queen', 'king', 'emperor', 'empress', 'saint', 'lord', 'lady', 'sir', 'dame',
-  'prince', 'princess', 'duke', 'duchess', 'pope', 'general', 'president', 'doctor', 'madame',
-]);
-
 /**
  * Lowercase name fragments that strongly suggest a guess when they appear in
  * a question ("are you einstein?"). Titles and generic words are excluded so
- * ordinary questions ("are you the queen?") still count as questions.
+ * ordinary questions ("are you the queen?", "were you great?") still count
+ * as questions.
  */
 export function getFigureNameTokens(figures: HistoricFigure[]): string[] {
   const tokens = new Set<string>();
   for (const figure of figures) {
     for (const name of [figure.name, ...figure.alternateNames]) {
-      for (const word of name.toLowerCase().split(/\s+/)) {
-        const token = word.replace(/[^\p{L}'-]/gu, '');
-        if (token.length >= 4 && !NAME_TOKEN_STOPWORDS.has(token)) {
-          tokens.add(token);
-        }
+      for (const token of distinctiveNameTokens(name)) {
+        tokens.add(token);
       }
     }
   }
