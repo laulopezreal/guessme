@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { allFigures } from '../data/figuresConfig';
 import {
     DAILY_EPOCH,
+    type DailyEntry,
     buildDailyShareText,
     dailyNumber,
     dailyResultGrid,
@@ -16,10 +17,21 @@ import {
     figureShortName,
 } from './gameUtils';
 
+interface TestFigure extends DailyEntry {
+    name: string;
+}
+
+const figure = (name: string, overrides: Partial<DailyEntry> = {}): TestFigure => ({
+    name,
+    dailyFrom: DAILY_EPOCH,
+    enabled: true,
+    ...overrides,
+});
+
 const roster = [
     'Einstein', 'Curie', 'da Vinci', 'Shakespeare', 'Tesla',
     'Galileo', 'Newton', 'Napoleon', 'Joan of Arc', 'Elizabeth I',
-];
+].map(name => figure(name));
 
 const dayOffset = (days: number) => shiftDateKey(DAILY_EPOCH, days);
 
@@ -92,6 +104,90 @@ describe('selectDailyFigure', () => {
     });
 });
 
+describe('selectDailyFigure when the roster changes', () => {
+    const namesFor = (list: readonly TestFigure[], firstDay: number, days: number) =>
+        Array.from({ length: days }, (_, offset) => selectDailyFigure(dayOffset(firstDay + offset), list)?.name);
+
+    const firstCycle = namesFor(roster, 0, roster.length);
+    // Added on day 3, while the first cycle is in progress.
+    const newcomer = figure('Lovelace', { dailyFrom: dayOffset(3) });
+
+    it('leaves the cycle in progress alone when a figure is added', () => {
+        expect(namesFor([...roster, newcomer], 0, roster.length)).toEqual(firstCycle);
+    });
+
+    it('does not mind where in the array the new figure lands', () => {
+        const inserted = [...roster.slice(0, 4), newcomer, ...roster.slice(4)];
+        expect(namesFor(inserted, 0, roster.length)).toEqual(firstCycle);
+    });
+
+    it('brings the new figure in with the next cycle, once, and lengthens later cycles', () => {
+        const longer = [...roster, newcomer];
+        const secondCycle = namesFor(longer, roster.length, longer.length);
+        expect(new Set(secondCycle).size).toBe(longer.length);
+        expect(secondCycle).toContain('Lovelace');
+
+        const thirdCycle = namesFor(longer, roster.length + longer.length, longer.length);
+        expect(new Set(thirdCycle).size).toBe(longer.length);
+    });
+
+    it('lets a figure dated on a cycle start join that cycle, and one dated a day later wait', () => {
+        const onTheDay = figure('Lovelace', { dailyFrom: dayOffset(roster.length) });
+        const dayLater = figure('Lovelace', { dailyFrom: dayOffset(roster.length + 1) });
+        expect(namesFor([...roster, onTheDay], roster.length, roster.length + 1)).toContain('Lovelace');
+        expect(namesFor([...roster, dayLater], roster.length, roster.length)).not.toContain('Lovelace');
+    });
+
+    it('never runs a figure two days in a row as the roster grows', () => {
+        const growing = [
+            ...roster,
+            newcomer,
+            figure('Turing', { dailyFrom: dayOffset(12) }),
+            figure('Hopper', { dailyFrom: dayOffset(40) }),
+        ];
+        const days = namesFor(growing, 0, 500);
+        days.forEach((name, day) => {
+            if (day > 0) expect(name).not.toBe(days[day - 1]);
+        });
+    });
+
+    it('moves only the days of a disabled figure', () => {
+        const pulled = 'Tesla';
+        const list = roster.map(entry => (entry.name === pulled ? { ...entry, enabled: false } : entry));
+        const before = namesFor(roster, 0, roster.length * 5);
+        const after = namesFor(list, 0, roster.length * 5);
+        after.forEach((name, day) => {
+            if (before[day] === pulled) {
+                expect(name).toBeDefined();
+                expect(name).not.toBe(pulled);
+            } else {
+                expect(name).toBe(before[day]);
+            }
+        });
+    });
+
+    it('gives a disabled figure a stand-in that does not touch its neighbouring days', () => {
+        const list = roster.map(entry => (entry.name === 'Tesla' ? { ...entry, enabled: false } : entry));
+        const days = namesFor(list, 0, roster.length);
+        days.forEach((name, day) => {
+            if (day > 0) expect(name).not.toBe(days[day - 1]);
+        });
+    });
+
+    it('follows a rename without moving anyone', () => {
+        const renamed = roster.map(entry => (entry.name === 'Einstein' ? { ...entry, name: 'A. Einstein' } : entry));
+        const expected = firstCycle.map(name => (name === 'Einstein' ? 'A. Einstein' : name));
+        expect(namesFor(renamed, 0, roster.length)).toEqual(expected);
+    });
+
+    it('has nothing to schedule when every figure is disabled or none has arrived', () => {
+        const disabled = roster.map(entry => ({ ...entry, enabled: false }));
+        expect(selectDailyFigure(DAILY_EPOCH, disabled)).toBeUndefined();
+        expect(getDailyPuzzle(disabled, new Date('2026-11-05T12:00:00Z'))).toBeNull();
+        expect(selectDailyFigure(dayOffset(20), [figure('Lovelace', { dailyFrom: dayOffset(5) })])).toBeUndefined();
+    });
+});
+
 describe('getDailyPuzzle', () => {
     it('bundles the date key, puzzle number and figure', () => {
         const puzzle = getDailyPuzzle(roster, new Date('2026-11-05T12:00:00Z'));
@@ -138,6 +234,16 @@ describe('figureShortName', () => {
         expect(figureShortName('Leonardo da Vinci')).toBe('Leonardo');
         expect(figureShortName('Queen Elizabeth I')).toBe('Elizabeth');
         expect(figureShortName('Cleopatra')).toBe('Cleopatra');
+    });
+
+    it('skips honorifics that read like a first name', () => {
+        expect(figureShortName('Mansa Musa')).toBe('Musa');
+        expect(figureShortName('Mahatma Gandhi')).toBe('Gandhi');
+    });
+
+    it('keeps "Ibn" with the name it belongs to', () => {
+        expect(figureShortName('Ibn Battuta')).toBe('Ibn Battuta');
+        expect(figureShortName('Ibn')).toBe('Ibn');
     });
 
     it('falls back to the whole name when every word is a title', () => {

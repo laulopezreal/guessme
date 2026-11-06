@@ -2,6 +2,11 @@ import type { HistoricFigure } from '../types';
 
 export interface HistoricFigureConfig extends HistoricFigure {
   enabled: boolean;
+  /**
+   * The first UTC date (`YYYY-MM-DD`) this figure may appear in the daily
+   * puzzle. It joins the first cycle that starts on or after this date.
+   */
+  dailyFrom: string;
 }
 
 /**
@@ -12,20 +17,23 @@ export interface HistoricFigureConfig extends HistoricFigure {
  * must stay free of browser-only or Node-only code.
  *
  * To add a new figure:
- * 1. Add a new object to the array below
- * 2. Set enabled: true when ready
+ * 1. Add a new object at the end of the array below
+ * 2. Set dailyFrom to the day it ships, or later. Never copy an older date from
+ *    a neighbour: that can change the daily puzzle people are playing today
+ * 3. Set enabled: true when ready
  *
  * To edit a figure:
  * - Update the properties directly
  *
  * To remove a figure:
- * - Set enabled: false (soft delete, keeps data)
- * - Or remove the object entirely (hard delete)
+ * - Set enabled: false (keeps the data and the figure's place in the daily schedule)
+ * - Do not delete or reorder objects: the daily schedule is built from array positions
  */
 
 export const allFigures: HistoricFigureConfig[] = [
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Albert Einstein",
     alternateNames: ["einstein", "albert", "albert einstein"],
     eraTags: ["Modern Era", "Physics"],
@@ -40,6 +48,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Marie Curie",
     alternateNames: ["curie", "marie", "marie curie", "madame curie", "marie sklodowska-curie", "sklodowska"],
     eraTags: ["Industrial Age", "Chemistry"],
@@ -54,6 +63,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Leonardo da Vinci",
     alternateNames: ["leonardo", "da vinci", "leonardo da vinci"],
     eraTags: ["Renaissance", "Art & Invention"],
@@ -68,6 +78,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "William Shakespeare",
     alternateNames: ["shakespeare", "william", "william shakespeare"],
     eraTags: ["Elizabethan", "Literature"],
@@ -82,6 +93,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Nikola Tesla",
     alternateNames: ["tesla", "nikola", "nikola tesla"],
     eraTags: ["Industrial Age", "Engineering"],
@@ -96,6 +108,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Galileo Galilei",
     alternateNames: ["galileo", "galilei", "galileo galilei"],
     eraTags: ["Renaissance", "Astronomy"],
@@ -110,6 +123,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Isaac Newton",
     alternateNames: ["newton", "isaac", "isaac newton"],
     eraTags: ["Scientific Revolution", "Mathematics"],
@@ -124,6 +138,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Napoleon Bonaparte",
     alternateNames: ["napoleon", "bonaparte", "napoleon bonaparte"],
     eraTags: ["Napoleonic Era", "Military"],
@@ -138,6 +153,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Joan of Arc",
     alternateNames: ["joan", "joan of arc", "jeanne d'arc", "saint joan"],
     eraTags: ["Middle Ages", "Leadership"],
@@ -152,6 +168,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Queen Elizabeth I",
     alternateNames: ["elizabeth i", "elizabeth", "queen elizabeth", "queen elizabeth i", "elizabeth tudor"],
     eraTags: ["Elizabethan", "Statesmanship"],
@@ -167,6 +184,7 @@ export const allFigures: HistoricFigureConfig[] = [
   // ─── Ancient world ───────────────────────────────────────────────────────
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Hatshepsut",
     alternateNames: ["hatshepsut", "queen hatshepsut", "pharaoh hatshepsut"],
     eraTags: ["Ancient Egypt", "Rulers"],
@@ -181,6 +199,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Tutankhamun",
     alternateNames: ["tutankhamun", "tutankhamen", "king tut", "tut"],
     eraTags: ["Ancient Egypt", "Rulers"],
@@ -195,6 +214,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Cleopatra",
     alternateNames: ["cleopatra", "cleopatra vii", "queen cleopatra"],
     eraTags: ["Ancient Egypt", "Rulers"],
@@ -209,6 +229,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Confucius",
     alternateNames: ["confucius", "kong qiu", "kongzi", "kong fuzi", "master kong"],
     eraTags: ["Ancient China", "Philosophy"],
@@ -223,6 +244,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Socrates",
     alternateNames: ["socrates"],
     eraTags: ["Ancient Greece", "Philosophy"],
@@ -237,6 +259,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Archimedes",
     alternateNames: ["archimedes", "archimedes of syracuse"],
     eraTags: ["Ancient Greece", "Mathematics"],
@@ -251,6 +274,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Alexander the Great",
     alternateNames: ["alexander", "alexander the great", "alexander iii", "alexander iii of macedon", "alexander of macedon"],
     eraTags: ["Ancient Greece", "Military"],
@@ -265,6 +289,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Julius Caesar",
     alternateNames: ["caesar", "julius", "julius caesar", "gaius julius caesar"],
     eraTags: ["Ancient Rome", "Statesmanship"],
@@ -279,6 +304,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Boudica",
     alternateNames: ["boudica", "boudicca", "boadicea", "queen boudica", "queen boudicca"],
     eraTags: ["Roman Britain", "Leadership"],
@@ -294,6 +320,7 @@ export const allFigures: HistoricFigureConfig[] = [
   // ─── Medieval and early modern ───────────────────────────────────────────
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Wu Zetian",
     alternateNames: ["wu zetian", "empress wu", "wu zhao", "zetian", "wu"],
     eraTags: ["Imperial China", "Rulers"],
@@ -308,6 +335,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Murasaki Shikibu",
     alternateNames: ["murasaki shikibu", "murasaki", "lady murasaki", "shikibu"],
     eraTags: ["Heian Japan", "Literature"],
@@ -322,6 +350,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Avicenna",
     alternateNames: ["avicenna", "ibn sina", "ibn sīnā", "abu ali ibn sina"],
     eraTags: ["Islamic Golden Age", "Medicine"],
@@ -336,6 +365,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Mansa Musa",
     alternateNames: ["mansa musa", "musa", "musa i", "musa i of mali", "musa keita"],
     eraTags: ["Medieval Africa", "Rulers"],
@@ -350,6 +380,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Marco Polo",
     alternateNames: ["marco polo", "polo", "marco"],
     eraTags: ["Middle Ages", "Exploration"],
@@ -364,6 +395,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Ibn Battuta",
     alternateNames: ["ibn battuta", "battuta", "ibn batuta", "ibn battutah"],
     eraTags: ["Middle Ages", "Exploration"],
@@ -378,6 +410,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Zheng He",
     alternateNames: ["zheng he", "zheng", "cheng ho", "admiral zheng he", "ma he"],
     eraTags: ["Ming China", "Exploration"],
@@ -392,6 +425,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Johannes Gutenberg",
     alternateNames: ["gutenberg", "johannes", "johannes gutenberg", "johann gutenberg"],
     eraTags: ["Renaissance", "Invention"],
@@ -406,6 +440,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Michelangelo",
     alternateNames: ["michelangelo", "michelangelo buonarroti", "buonarroti"],
     eraTags: ["Renaissance", "Art"],
@@ -420,6 +455,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Suleiman the Magnificent",
     alternateNames: ["suleiman", "suleiman the magnificent", "suleiman i", "suleyman", "süleyman", "süleyman the magnificent", "suleiman the lawgiver", "sultan suleiman"],
     eraTags: ["Ottoman Empire", "Rulers"],
@@ -434,6 +470,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Montezuma II",
     alternateNames: ["montezuma", "moctezuma", "montezuma ii", "moctezuma ii", "motecuhzoma"],
     eraTags: ["Aztec Empire", "Rulers"],
@@ -449,6 +486,7 @@ export const allFigures: HistoricFigureConfig[] = [
   // ─── 18th and 19th century ───────────────────────────────────────────────
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Wolfgang Amadeus Mozart",
     alternateNames: ["mozart", "wolfgang", "amadeus", "wolfgang amadeus mozart", "wolfgang mozart"],
     eraTags: ["Classical Era", "Music"],
@@ -463,6 +501,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Ludwig van Beethoven",
     alternateNames: ["beethoven", "ludwig", "ludwig van beethoven", "van beethoven"],
     eraTags: ["Classical Era", "Music"],
@@ -477,6 +516,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Catherine the Great",
     alternateNames: ["catherine", "catherine the great", "catherine ii", "catherine ii of russia", "empress catherine"],
     eraTags: ["Age of Enlightenment", "Rulers"],
@@ -491,6 +531,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "George Washington",
     alternateNames: ["washington", "george", "george washington", "president washington"],
     eraTags: ["American Revolution", "Statesmanship"],
@@ -505,6 +546,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Simón Bolívar",
     alternateNames: ["bolivar", "bolívar", "simon bolivar", "simón bolívar", "simon", "simón", "el libertador", "the liberator"],
     eraTags: ["Age of Revolution", "Leadership"],
@@ -519,6 +561,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Jane Austen",
     alternateNames: ["austen", "jane", "jane austen"],
     eraTags: ["Regency England", "Literature"],
@@ -533,6 +576,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Charles Darwin",
     alternateNames: ["darwin", "charles", "charles darwin"],
     eraTags: ["Victorian Era", "Biology"],
@@ -547,6 +591,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Abraham Lincoln",
     alternateNames: ["lincoln", "abraham", "abraham lincoln", "abe lincoln", "honest abe", "president lincoln"],
     eraTags: ["American Civil War", "Statesmanship"],
@@ -561,6 +606,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Harriet Tubman",
     alternateNames: ["tubman", "harriet", "harriet tubman", "araminta ross"],
     eraTags: ["American Civil War", "Activism"],
@@ -575,6 +621,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Florence Nightingale",
     alternateNames: ["nightingale", "florence", "florence nightingale", "the lady with the lamp"],
     eraTags: ["Victorian Era", "Medicine"],
@@ -589,6 +636,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Ada Lovelace",
     alternateNames: ["lovelace", "ada", "ada lovelace", "ada byron", "augusta ada king", "countess of lovelace"],
     eraTags: ["Victorian Era", "Computing"],
@@ -603,6 +651,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Vincent van Gogh",
     alternateNames: ["van gogh", "vincent", "vincent van gogh", "gogh"],
     eraTags: ["Post-Impressionism", "Art"],
@@ -617,6 +666,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Louis Pasteur",
     alternateNames: ["pasteur", "louis", "louis pasteur"],
     eraTags: ["Industrial Age", "Microbiology"],
@@ -631,6 +681,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Hokusai",
     alternateNames: ["hokusai", "katsushika hokusai", "katsushika"],
     eraTags: ["Edo Japan", "Art"],
@@ -645,6 +696,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Queen Victoria",
     alternateNames: ["victoria", "queen victoria", "alexandrina victoria"],
     eraTags: ["British Empire", "Rulers"],
@@ -660,6 +712,7 @@ export const allFigures: HistoricFigureConfig[] = [
   // ─── 20th century ────────────────────────────────────────────────────────
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Mahatma Gandhi",
     alternateNames: ["gandhi", "mahatma", "mahatma gandhi", "mohandas gandhi", "mohandas karamchand gandhi", "bapu", "gandhiji"],
     eraTags: ["20th Century", "Activism"],
@@ -674,6 +727,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Winston Churchill",
     alternateNames: ["churchill", "winston", "winston churchill", "sir winston churchill"],
     eraTags: ["World War II", "Statesmanship"],
@@ -688,6 +742,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Amelia Earhart",
     alternateNames: ["earhart", "amelia", "amelia earhart"],
     eraTags: ["Interwar Years", "Aviation"],
@@ -702,6 +757,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Frida Kahlo",
     alternateNames: ["kahlo", "frida", "frida kahlo"],
     eraTags: ["20th Century", "Art"],
@@ -716,6 +772,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Alan Turing",
     alternateNames: ["turing", "alan", "alan turing"],
     eraTags: ["World War II", "Computing"],
@@ -730,6 +787,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Anne Frank",
     alternateNames: ["frank", "anne", "anne frank", "annelies frank"],
     eraTags: ["World War II", "Writing"],
@@ -744,6 +802,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Rosa Parks",
     alternateNames: ["parks", "rosa", "rosa parks", "rosa louise parks"],
     eraTags: ["Civil Rights Era", "Civil Rights"],
@@ -758,6 +817,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Martin Luther King Jr.",
     alternateNames: ["martin luther king", "martin luther king jr", "martin luther king jr.", "mlk", "dr king", "dr. king", "martin"],
     eraTags: ["Civil Rights Era", "Civil Rights"],
@@ -772,6 +832,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Nelson Mandela",
     alternateNames: ["mandela", "nelson", "nelson mandela", "madiba", "rolihlahla mandela"],
     eraTags: ["20th Century", "Statesmanship"],
@@ -786,6 +847,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Yuri Gagarin",
     alternateNames: ["gagarin", "yuri", "yuri gagarin", "yuri alekseyevich gagarin"],
     eraTags: ["Space Age", "Space Exploration"],
@@ -800,6 +862,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Pablo Picasso",
     alternateNames: ["picasso", "pablo", "pablo picasso", "pablo ruiz picasso"],
     eraTags: ["20th Century", "Art"],
@@ -814,6 +877,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Wangari Maathai",
     alternateNames: ["maathai", "wangari", "wangari maathai", "wangari muta maathai"],
     eraTags: ["20th Century", "Environmentalism"],
@@ -828,6 +892,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Helen Keller",
     alternateNames: ["keller", "helen", "helen keller", "helen adams keller"],
     eraTags: ["20th Century", "Activism"],
@@ -842,6 +907,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Neil Armstrong",
     alternateNames: ["armstrong", "neil", "neil armstrong", "neil alden armstrong"],
     eraTags: ["Space Age", "Space Exploration"],
@@ -856,6 +922,7 @@ export const allFigures: HistoricFigureConfig[] = [
   },
   {
     enabled: true,
+    dailyFrom: '2026-11-04',
     name: "Agatha Christie",
     alternateNames: ["christie", "agatha", "agatha christie", "dame agatha christie"],
     eraTags: ["20th Century", "Literature"],
@@ -870,7 +937,8 @@ export const allFigures: HistoricFigureConfig[] = [
   }
 ];
 
-function toFigure(config: HistoricFigureConfig): HistoricFigure {
+/** The figure as the game sees it, without the roster bookkeeping. */
+export function toFigure(config: HistoricFigureConfig): HistoricFigure {
   const { name, alternateNames, clues, eraTags, voiceLine } = config;
   return { name, alternateNames, clues, eraTags, voiceLine };
 }
