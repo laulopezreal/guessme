@@ -70,7 +70,7 @@ npm test             # Vitest in watch mode
 npx vitest run       # Single pass
 ```
 
-Suites: `src/reducers/gameReducer.test.ts` (state transitions), `src/data/figuresConfig.test.ts` (roster integrity, guess tokens), `worker/index.test.ts` (the proxy against a mocked OpenAI endpoint).
+Suites: `src/reducers/gameReducer.test.ts` (state transitions), `src/data/figuresConfig.test.ts` (roster integrity, guess tokens), `src/utils/gameUtils.test.ts` (guess matching), `worker/index.test.ts` (the proxy against a mocked OpenAI endpoint).
 
 ## Code Architecture
 
@@ -178,4 +178,4 @@ These files are kept for reference but are not used by the React build.
 
 - Daily puzzle mode (one figure per day, shareable result) as the growth loop
 - Free daily AI allowance and a paid tier, metered in the Worker (KV or Durable Object counters)
-- Grow the roster well beyond ten figures
+- Keep growing the roster (60 figures today) so the daily puzzle cycles less often than every two months
