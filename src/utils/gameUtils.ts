@@ -443,14 +443,20 @@ export function formatCountdown(ms: number): string {
   return [hours, minutes, seconds].map(part => String(part).padStart(2, '0')).join(':');
 }
 
-/** Leading titles that are not part of a person's name. */
+/** Leading titles and honorifics that are not part of a person's name. */
 const NAME_TITLES = new Set([
   'queen', 'king', 'prince', 'princess', 'emperor', 'empress', 'saint', 'st', 'st.',
-  'sir', 'dame', 'lady', 'lord', 'pope', 'president', 'general',
+  'sir', 'dame', 'lady', 'lord', 'pope', 'president', 'general', 'mansa', 'mahatma',
 ]);
+
+/** Arabic "son of": not a name on its own, so it stays with the word after it. */
+const NAME_PARTICLES = new Set(['ibn']);
 
 /** The name to address a figure by in short copy: the first name, skipping a leading title. */
 export function figureShortName(name: string): string {
   const words = name.trim().split(/\s+/).filter(Boolean);
-  return words.find(word => !NAME_TITLES.has(word.toLowerCase())) ?? name;
+  const first = words.findIndex(word => !NAME_TITLES.has(word.toLowerCase()));
+  if (first === -1) return name;
+  const next = words[first + 1];
+  return NAME_PARTICLES.has(words[first].toLowerCase()) && next ? `${words[first]} ${next}` : words[first];
 }

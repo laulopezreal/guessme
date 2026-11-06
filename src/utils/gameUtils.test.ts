@@ -236,6 +236,16 @@ describe('figureShortName', () => {
         expect(figureShortName('Cleopatra')).toBe('Cleopatra');
     });
 
+    it('skips honorifics that read like a first name', () => {
+        expect(figureShortName('Mansa Musa')).toBe('Musa');
+        expect(figureShortName('Mahatma Gandhi')).toBe('Gandhi');
+    });
+
+    it('keeps "Ibn" with the name it belongs to', () => {
+        expect(figureShortName('Ibn Battuta')).toBe('Ibn Battuta');
+        expect(figureShortName('Ibn')).toBe('Ibn');
+    });
+
     it('falls back to the whole name when every word is a title', () => {
         expect(figureShortName('Pope')).toBe('Pope');
     });
