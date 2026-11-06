@@ -6,6 +6,7 @@ import {
   MAX_RESPONSE_TOKENS,
   buildConversationMessages,
   buildGreetingMessages,
+  buildRevealedConversationMessages,
   buildValidationMessages,
   fallbackValidation,
   parseValidationResult,
@@ -83,6 +84,13 @@ async function handleChat(request: Request, env: Env): Promise<Response> {
       return json<AiChatResponse>({ op: 'message', content });
     }
 
+    if (chatRequest.op === 'converse') {
+      const messages = buildRevealedConversationMessages(figure, chatRequest.history);
+      const content = await complete(env, messages, { maxTokens: MAX_RESPONSE_TOKENS, temperature: 0.8 });
+      if (!content) return error('empty_response', 502);
+      return json<AiChatResponse>({ op: 'converse', content });
+    }
+
     const messages = buildValidationMessages(chatRequest.guess, figure, chatRequest.history);
     const text = await complete(env, messages, { maxTokens: 150, temperature: 0.3, json: true });
     const result = (text ? parseValidationResult(text) : null) ?? fallbackValidation(chatRequest.guess, figure);
@@ -152,6 +160,14 @@ function parseRequest(input: unknown): ParsedRequest {
       ? Math.min(MAX_HINT_LEVEL, Math.max(1, input.hintLevel))
       : 1;
     return { ok: true, value: { op, figureId, history, hintLevel } };
+  }
+
+  if (op === 'converse') {
+    const history = parseHistory(input.history);
+    if (!history || history.length === 0 || history[history.length - 1].role !== 'user') {
+      return { ok: false, error: 'invalid_history' };
+    }
+    return { ok: true, value: { op, figureId, history } };
   }
 
   if (op === 'validate') {

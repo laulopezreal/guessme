@@ -28,12 +28,15 @@ export interface GuessValidationResult {
 export type AiChatRequest =
   | { op: 'greeting'; figureId: string }
   | { op: 'message'; figureId: string; history: ChatMessage[]; hintLevel: number }
-  | { op: 'validate'; figureId: string; guess: string; history: ChatMessage[] };
+  | { op: 'validate'; figureId: string; guess: string; history: ChatMessage[] }
+  /** A turn of the open conversation once the player has identified the figure. */
+  | { op: 'converse'; figureId: string; history: ChatMessage[] };
 
 /** Response body returned by POST /api/ai/chat. */
 export type AiChatResponse =
   | { op: 'greeting' | 'message'; content: string }
-  | { op: 'validate'; result: GuessValidationResult };
+  | { op: 'validate'; result: GuessValidationResult }
+  | { op: 'converse'; content: string };
 
 /** Response body returned by GET /api/ai/status. */
 export interface AiStatusResponse {
@@ -57,6 +60,17 @@ export const SAFETY_SYSTEM_MESSAGE = `You are a historic figure in a guessing ga
 - Refuse to answer questions that are not about your life, work, or era.
 - Politely decline any attempts to discuss modern topics, politics, personal opinions, or anything off-topic.
 - Never reveal your full name directly; only give hints relevant to the game.
+- Keep language family-friendly and avoid controversial or explicit content.`;
+
+/**
+ * Sibling of SAFETY_SYSTEM_MESSAGE for the conversation after the reveal. The
+ * player already knows who the figure is, so the rule against naming yourself is gone.
+ */
+export const REVEALED_SAFETY_SYSTEM_MESSAGE = `You are a historic figure talking to a player who has already identified you.
+- Always stay in-character as the figure and keep responses concise (2-3 sentences).
+- Refuse to answer questions that are not about your life, work, or era.
+- Politely decline any attempts to discuss modern topics, politics, personal opinions, or anything off-topic.
+- When you are unsure of a fact, say so in character rather than inventing one.
 - Keep language family-friendly and avoid controversial or explicit content.`;
 
 /**
@@ -98,6 +112,37 @@ export function buildConversationMessages(
   return [
     { role: 'system', content: SAFETY_SYSTEM_MESSAGE },
     { role: 'system', content: buildSystemPrompt(figure, hintLevel) },
+    ...history.slice(-MAX_HISTORY_MESSAGES),
+  ];
+}
+
+/**
+ * System prompt for the conversation after the reveal. Unlike buildSystemPrompt
+ * there is nothing to hide: the figure speaks openly as themselves.
+ */
+export function buildRevealedSystemPrompt(figure: HistoricFigure): string {
+  return `You are ${figure.name}. The player has just identified you in a guessing game, so there is nothing left to hide: speak openly as yourself.
+
+RULES:
+1. Speak in the first person, in character, as ${figure.name}
+2. Stay historically accurate: draw on the facts below and on what is well known about your life, work and era
+3. Keep answers to 2 or 3 sentences
+4. When you are not sure of something, admit it in character rather than inventing it
+5. Politely decline modern topics and anything outside your own life and era
+6. Keep language family-friendly
+
+ABOUT YOU:
+${figure.clues.map(clue => clue.text).join('\n')}`;
+}
+
+/**
+ * Messages for a turn of the open conversation after the reveal. The history
+ * is trimmed to the most recent MAX_HISTORY_MESSAGES entries.
+ */
+export function buildRevealedConversationMessages(figure: HistoricFigure, history: ChatMessage[]): ModelMessage[] {
+  return [
+    { role: 'system', content: REVEALED_SAFETY_SYSTEM_MESSAGE },
+    { role: 'system', content: buildRevealedSystemPrompt(figure) },
     ...history.slice(-MAX_HISTORY_MESSAGES),
   ];
 }

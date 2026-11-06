@@ -2,6 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import worker from './index';
 import { figureId } from '../src/data/figuresConfig';
+import { MAX_RESPONSE_TOKENS } from '../src/services/llmPrompts';
 
 const EINSTEIN = figureId('Albert Einstein');
 
@@ -156,5 +157,45 @@ describe('POST /api/ai/chat operations', () => {
     expect(await response.json()).toEqual({ error: 'upstream_error' });
     expect(errorSpy).toHaveBeenCalled();
     errorSpy.mockRestore();
+  });
+});
+
+describe('POST /api/ai/chat converse', () => {
+  it('answers openly as the figure once the player knows who it is', async () => {
+    const history = Array.from({ length: 20 }, (_, i) => ({
+      role: i % 2 === 0 ? 'assistant' : 'user',
+      content: `turn ${i}`,
+    }));
+    const response = await call(post({ op: 'converse', figureId: EINSTEIN, history }), makeEnv());
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ op: 'converse', content: 'Hello there' });
+
+    const body = lastUpstreamBody();
+    expect(body.max_tokens).toBe(MAX_RESPONSE_TOKENS);
+    const messages = body.messages as Array<{ role: string; content: string }>;
+    const instructions = messages.filter(m => m.role === 'system').map(m => m.content).join('\n');
+    expect(instructions).toContain('Albert Einstein');
+    expect(instructions).toContain('first person');
+    // The guessing-game rule against naming yourself must not leak into the open conversation.
+    expect(instructions).not.toMatch(/never (directly )?(say|reveal) your/i);
+    const conversation = messages.filter(m => m.role !== 'system');
+    expect(conversation).toHaveLength(12);
+    expect(conversation.at(-1)).toEqual({ role: 'user', content: 'turn 19' });
+  });
+
+  it('requires a history that ends with the player', async () => {
+    const missing = await call(post({ op: 'converse', figureId: EINSTEIN }), makeEnv());
+    expect(missing.status).toBe(400);
+    expect(await missing.json()).toEqual({ error: 'invalid_history' });
+
+    const empty = await call(post({ op: 'converse', figureId: EINSTEIN, history: [] }), makeEnv());
+    expect(empty.status).toBe(400);
+
+    const figureSpokeLast = await call(
+      post({ op: 'converse', figureId: EINSTEIN, history: [{ role: 'assistant', content: 'Hello' }] }),
+      makeEnv(),
+    );
+    expect(figureSpokeLast.status).toBe(400);
+    expect(upstream).not.toHaveBeenCalled();
   });
 });

@@ -677,4 +677,251 @@ describe('gameReducer', () => {
             expect(newState.round).toBe(1);
         });
     });
+
+    describe('START_DAILY', () => {
+        const figure = mockFigures[0];
+
+        it('should start a fresh daily round and keep the practice preferences', () => {
+            const dirtyState: GameState = {
+                ...state,
+                shuffledFigures: mockFigures,
+                currentFigureIndex: 1,
+                score: 180,
+                round: 3,
+                llmMode: true,
+                aiStatus: 'available',
+                showWelcome: true,
+            };
+
+            const newState = gameReducer(dirtyState, {
+                type: 'START_DAILY',
+                payload: { figure, dateKey: '2026-11-04', dayNumber: 1 },
+            });
+
+            expect(newState.playKind).toBe('daily');
+            expect(newState.daily).toEqual({ dateKey: '2026-11-04', dayNumber: 1 });
+            expect(newState.shuffledFigures).toEqual([figure]);
+            expect(newState.currentFigureIndex).toBe(0);
+            expect(newState.score).toBe(0);
+            expect(newState.round).toBe(1);
+            expect(newState.revealedClues).toEqual([]);
+            expect(newState.roundOutcome).toBeNull();
+            expect(newState.showWelcome).toBe(false);
+            expect(newState.inputDisabled).toBe(false);
+            expect(newState.llmMode).toBe(true); // kept for the return to practice
+            expect(newState.aiStatus).toBe('available');
+        });
+
+        it('should restore a finished puzzle instead of allowing a replay', () => {
+            const newState = gameReducer(state, {
+                type: 'START_DAILY',
+                payload: {
+                    figure,
+                    dateKey: '2026-11-04',
+                    dayNumber: 1,
+                    priorResult: { won: true, cluesUsed: 2, score: 90 },
+                },
+            });
+
+            expect(newState.roundOutcome).toBe('won');
+            expect(newState.revealedClues).toEqual(figure.clues.slice(0, 2));
+            expect(newState.score).toBe(90);
+            expect(newState.isRevealed).toBe(true);
+            expect(newState.inputDisabled).toBe(true);
+            expect(newState.showNextButton).toBe(true);
+            expect(newState.feedbackMessage).toContain('Albert Einstein');
+            expect(newState.feedbackType).toBe('success');
+        });
+
+        it('should restore a give-up as a lost puzzle and clamp the clue count', () => {
+            const newState = gameReducer(state, {
+                type: 'START_DAILY',
+                payload: {
+                    figure,
+                    dateKey: '2026-11-04',
+                    dayNumber: 1,
+                    priorResult: { won: false, cluesUsed: 9, score: 0 },
+                },
+            });
+
+            expect(newState.roundOutcome).toBe('gave_up');
+            expect(newState.revealedClues).toHaveLength(figure.clues.length);
+            expect(newState.score).toBe(0);
+            expect(newState.feedbackType).toBe('error');
+        });
+
+        it('should resume an unfinished round with its clues and misses', () => {
+            const newState = gameReducer(state, {
+                type: 'START_DAILY',
+                payload: {
+                    figure,
+                    dateKey: '2026-11-04',
+                    dayNumber: 1,
+                    progress: {
+                        revealedClues: [figure.clues[0], { ...figure.clues[1], isAdaptive: true }],
+                        consecutiveMisses: 2,
+                        adaptiveNotice: 'Adaptive hint given',
+                    },
+                },
+            });
+
+            expect(newState.roundOutcome).toBeNull();
+            expect(newState.revealedClues).toHaveLength(2);
+            expect(newState.revealedClues[1].isAdaptive).toBe(true);
+            expect(newState.consecutiveMisses).toBe(2);
+            expect(newState.adaptiveHintNotice).toBe('Adaptive hint given');
+            expect(newState.inputDisabled).toBe(false);
+            expect(newState.score).toBe(0);
+        });
+
+        it('should prefer a finished result over saved progress', () => {
+            const newState = gameReducer(state, {
+                type: 'START_DAILY',
+                payload: {
+                    figure,
+                    dateKey: '2026-11-04',
+                    dayNumber: 1,
+                    priorResult: { won: true, cluesUsed: 1, score: 100 },
+                    progress: { revealedClues: figure.clues, consecutiveMisses: 3 },
+                },
+            });
+
+            expect(newState.roundOutcome).toBe('won');
+            expect(newState.revealedClues).toHaveLength(1);
+            expect(newState.consecutiveMisses).toBe(0);
+        });
+    });
+
+    describe("asking today's figure", () => {
+        const message = (role: Message['role'], content: string): Message => ({
+            id: `${role}-${content}`,
+            role,
+            content,
+            timestamp: 1,
+        });
+        const finishedDaily = (): GameState => ({
+            ...state,
+            playKind: 'daily',
+            daily: { dateKey: '2026-11-04', dayNumber: 1 },
+            roundOutcome: 'won',
+            shuffledFigures: [mockFigures[0]],
+        });
+
+        it('should count a question only once the figure has answered', () => {
+            const sent = gameReducer(finishedDaily(), { type: 'DAILY_ASK_SENT', payload: message('user', 'Where were you born?') });
+            expect(sent.dailyAsk.isTyping).toBe(true);
+            expect(sent.dailyAsk.used).toBe(0);
+            expect(sent.dailyAsk.messages).toHaveLength(1);
+
+            const answered = gameReducer(sent, { type: 'DAILY_ASK_ANSWERED', payload: message('assistant', 'In Ulm.') });
+            expect(answered.dailyAsk.isTyping).toBe(false);
+            expect(answered.dailyAsk.used).toBe(1);
+            expect(answered.dailyAsk.messages.map(m => m.content)).toEqual(['Where were you born?', 'In Ulm.']);
+        });
+
+        it('should not charge a question that failed', () => {
+            const sent = gameReducer(finishedDaily(), { type: 'DAILY_ASK_SENT', payload: message('user', 'Hello?') });
+            const failed = gameReducer(sent, { type: 'DAILY_ASK_FAILED', payload: message('system', 'The AI did not answer.') });
+            expect(failed.dailyAsk.isTyping).toBe(false);
+            expect(failed.dailyAsk.used).toBe(0);
+            expect(failed.dailyAsk.messages.at(-1)?.role).toBe('system');
+        });
+
+        it('should leave the AI-mode conversation untouched', () => {
+            const sent = gameReducer(finishedDaily(), { type: 'DAILY_ASK_SENT', payload: message('user', 'Hello?') });
+            expect(sent.messages).toEqual([]);
+            expect(sent.questionsAsked).toBe(0);
+            expect(sent.isTyping).toBe(false);
+        });
+
+        it('should restore the questions already used when a finished puzzle reopens', () => {
+            const newState = gameReducer(state, {
+                type: 'START_DAILY',
+                payload: {
+                    figure: mockFigures[0],
+                    dateKey: '2026-11-04',
+                    dayNumber: 1,
+                    priorResult: { won: true, cluesUsed: 2, score: 90, questionsAsked: 2 },
+                },
+            });
+            expect(newState.dailyAsk).toEqual({ messages: [], used: 2, isTyping: false });
+        });
+
+        it('should start each puzzle and the practice game with an empty chat', () => {
+            const chatted: GameState = {
+                ...finishedDaily(),
+                dailyAsk: { messages: [message('user', 'Hi')], used: 1, isTyping: false },
+            };
+            const fresh = gameReducer(chatted, {
+                type: 'START_DAILY',
+                payload: { figure: mockFigures[1], dateKey: '2026-11-05', dayNumber: 2 },
+            });
+            expect(fresh.dailyAsk).toEqual(initialState.dailyAsk);
+
+            const practice = gameReducer(chatted, { type: 'RESTART_GAME', payload: { figures: mockFigures } });
+            expect(practice.dailyAsk).toEqual(initialState.dailyAsk);
+
+            const reset = gameReducer(chatted, { type: 'INIT_GAME', payload: { figures: mockFigures } });
+            expect(reset.dailyAsk).toEqual(initialState.dailyAsk);
+        });
+    });
+
+    describe('round outcome', () => {
+        it('should be won after a correct guess and gave_up after giving up', () => {
+            const withFigure: GameState = { ...state, shuffledFigures: mockFigures, currentFigureIndex: 0 };
+
+            const won = gameReducer(withFigure, {
+                type: 'CORRECT_GUESS',
+                payload: { scoreDelta: 100, feedback: 'Correct!' },
+            });
+            expect(won.roundOutcome).toBe('won');
+
+            const gaveUp = gameReducer(withFigure, { type: 'GIVE_UP' });
+            expect(gaveUp.roundOutcome).toBe('gave_up');
+        });
+
+        it('should clear when the next figure loads', () => {
+            const finished: GameState = {
+                ...state,
+                shuffledFigures: mockFigures,
+                currentFigureIndex: 0,
+                roundOutcome: 'won',
+            };
+
+            expect(gameReducer(finished, { type: 'NEXT_FIGURE' }).roundOutcome).toBeNull();
+        });
+    });
+
+    describe('leaving the daily puzzle', () => {
+        const dailyState = (): GameState => ({
+            ...state,
+            playKind: 'daily',
+            daily: { dateKey: '2026-11-04', dayNumber: 1 },
+            roundOutcome: 'won',
+            shuffledFigures: [mockFigures[0]],
+        });
+
+        it('RESTART_GAME should return to practice with a fresh roster', () => {
+            const newState = gameReducer(dailyState(), {
+                type: 'RESTART_GAME',
+                payload: { figures: mockFigures },
+            });
+
+            expect(newState.playKind).toBe('practice');
+            expect(newState.daily).toBeNull();
+            expect(newState.roundOutcome).toBeNull();
+            expect(newState.shuffledFigures).toEqual(mockFigures);
+        });
+
+        it('INIT_GAME should return to practice', () => {
+            const newState = gameReducer(dailyState(), {
+                type: 'INIT_GAME',
+                payload: { figures: mockFigures },
+            });
+
+            expect(newState.playKind).toBe('practice');
+            expect(newState.daily).toBeNull();
+            expect(newState.roundOutcome).toBeNull();
+        });
+    });
 });

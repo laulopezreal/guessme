@@ -8,9 +8,11 @@ import GameOverModal from './components/GameOverModal';
 import ConversationView from './components/ConversationView';
 import WelcomeModal from './components/WelcomeModal';
 import DocumentationModal from './components/DocumentationModal';
+import DailyResult from './components/DailyResult';
+import DailyStatsModal from './components/DailyStatsModal';
 import Footer from './components/Footer';
 import { useGame } from './hooks/useGame';
-import { calculatePoints, classicScoreWeights, llmScoreWeights, type ScoreBreakdown } from './utils/gameUtils';
+import { calculatePoints, classicScoreWeights, dailyNumber, llmScoreWeights, type ScoreBreakdown } from './utils/gameUtils';
 import type { GameMode } from './services/gameMode';
 import './App.css';
 
@@ -19,6 +21,8 @@ const WARNING_THRESHOLD = 3;
 function App() {
   const [showGiveUpConfirm, setShowGiveUpConfirm] = useState(false);
   const [pendingMode, setPendingMode] = useState<GameMode | null>(null);
+  const [confirmDaily, setConfirmDaily] = useState(false);
+  const [showStats, setShowStats] = useState(false);
 
   const {
     // State
@@ -47,6 +51,14 @@ function App() {
     lastRoundBreakdown,
     lastRoundNumber,
     guessTokens,
+    isDaily,
+    daily,
+    roundOutcome,
+    dailyStats,
+    todayKey,
+    todayResult,
+    dailyInProgress,
+    dailyAsk,
 
     // Actions
     revealNextClue,
@@ -61,9 +73,15 @@ function App() {
     resetConversation,
     handleValidationError,
     handleGiveUp,
+    startDaily,
+    startPractice,
+    handleShared,
+    askDailyFigure,
+    handleAskOpened,
 
     // Constants
     QUESTION_LIMIT,
+    DAILY_ASK_LIMIT,
   } = useGame();
 
   const formatBreakdown = (breakdown: ScoreBreakdown): string => {
@@ -100,7 +118,7 @@ function App() {
 
   const inActiveRound = !gameEnded && !showNextButton;
   const breakdownToShow = inActiveRound ? currentRoundBreakdown : lastRoundBreakdown;
-  const breakdownLabel = inActiveRound ? 'This round' : 'Last round';
+  const breakdownLabel = isDaily ? "Today's puzzle" : inActiveRound ? 'This round' : 'Last round';
   const breakdownRoundNumber = inActiveRound ? round : lastRoundNumber;
 
   const handleGiveUpRequest = () => {
@@ -137,6 +155,24 @@ function App() {
     setPendingMode(null);
   };
 
+  // Opening the daily puzzle abandons a practice game, so ask first. Leaving the daily
+  // puzzle loses nothing: an unfinished round is saved and resumes next time.
+  const requestDaily = () => {
+    const practiceInProgress = !isDaily && !showWelcome && !gameEnded;
+    if (practiceInProgress) {
+      setConfirmDaily(true);
+    } else {
+      startDaily();
+    }
+  };
+
+  const handleConfirmDaily = () => {
+    setConfirmDaily(false);
+    startDaily();
+  };
+
+  const siteUrl = window.location.origin;
+
   if (!currentFigure) {
     return <div>Loading...</div>;
   }
@@ -146,7 +182,10 @@ function App() {
       <Header
         llmMode={llmMode}
         aiAvailable={aiAvailable}
+        isDaily={isDaily}
         onShowDocs={handleShowDocs}
+        onShowStats={() => setShowStats(true)}
+        onSwitchKind={isDaily ? startPractice : requestDaily}
         onToggleMode={() => requestMode(llmMode ? 'classic' : 'ai')}
       />
       <div className="character-and-score">
@@ -156,7 +195,7 @@ function App() {
             <div className="score-breakdown-inline">
               <span className="score-breakdown-inline-label">
                 {breakdownLabel}
-                {breakdownRoundNumber ? ` (Round ${breakdownRoundNumber})` : ''}:
+                {breakdownRoundNumber && !isDaily ? ` (Round ${breakdownRoundNumber})` : ''}:
               </span>
               <span className="score-breakdown-inline-value">
                 {formatBreakdown(breakdownToShow)}
@@ -164,8 +203,8 @@ function App() {
             </div>
           )}
           <div className="score-item">
-            <span className="score-label">Round</span>
-            <span className="score-value">{round}</span>
+            <span className="score-label">{isDaily ? 'Daily' : 'Round'}</span>
+            <span className="score-value">{isDaily && daily ? `#${daily.dayNumber}` : round}</span>
           </div>
           <div className="score-item">
             <span className="score-label">Score</span>
@@ -214,16 +253,45 @@ function App() {
           personaLine={personaLine}
         />
 
-        {showNextButton && (
+        {showNextButton && !isDaily && (
           <button className="next-btn" onClick={nextFigure}>
             Next Character
           </button>
+        )}
+
+        {isDaily && daily && roundOutcome && (
+          <DailyResult
+            dayNumber={daily.dayNumber}
+            won={roundOutcome === 'won'}
+            cluesUsed={revealedClues.length}
+            totalClues={currentFigure.clues.length}
+            score={score}
+            siteUrl={siteUrl}
+            onShare={handleShared}
+            onShowStats={() => setShowStats(true)}
+            onPractice={startPractice}
+            onPlayNext={startDaily}
+            ask={{
+              figureName: currentFigure.name,
+              available: aiAvailable,
+              messages: dailyAsk.messages,
+              used: dailyAsk.used,
+              limit: DAILY_ASK_LIMIT,
+              isTyping: dailyAsk.isTyping,
+              onAsk: askDailyFigure,
+              onOpen: handleAskOpened,
+            }}
+          />
         )}
       </main>
 
       <WelcomeModal
         isVisible={showWelcome}
         onStart={handleStartGame}
+        onStartDaily={startDaily}
+        dailyNumber={dailyNumber(todayKey)}
+        dailyPlayed={Boolean(todayResult)}
+        dailyInProgress={dailyInProgress}
         llmMode={llmMode}
         aiAvailable={aiAvailable}
         onSelectMode={setMode}
@@ -237,9 +305,16 @@ function App() {
       />
 
       <GameOverModal
-        isVisible={gameEnded}
+        isVisible={gameEnded && !isDaily}
         finalScore={score}
         onRestart={restartGame}
+      />
+
+      <DailyStatsModal
+        isVisible={showStats}
+        stats={dailyStats}
+        todayKey={todayKey}
+        onClose={() => setShowStats(false)}
       />
 
       {showGiveUpConfirm && (
@@ -274,6 +349,25 @@ function App() {
                 Switch and restart
               </button>
               <button className="modal-btn modal-btn-secondary" onClick={handleCancelMode}>
+                Keep playing
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmDaily && (
+        <div className="modal">
+          <div className="modal-content confirm-modal">
+            <h2 className="modal-title">Open today's puzzle?</h2>
+            <p className="modal-text">
+              Your practice game will start over when you come back to it.
+            </p>
+            <div className="confirm-actions">
+              <button className="modal-btn" onClick={handleConfirmDaily}>
+                Play the daily
+              </button>
+              <button className="modal-btn modal-btn-secondary" onClick={() => setConfirmDaily(false)}>
                 Keep playing
               </button>
             </div>

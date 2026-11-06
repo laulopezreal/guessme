@@ -166,3 +166,24 @@ export async function validateGuess(
     return fallbackValidation(guess, figure);
   }
 }
+
+/**
+ * One turn of the open conversation with a figure the player has already
+ * identified. Every failure propagates, as in sendMessage, so the caller can
+ * explain it with describeAiError.
+ */
+export async function converseWithFigure(
+  conversationHistory: ConversationMessage[],
+  figure: HistoricFigure,
+): Promise<string> {
+  const result = await callChat({
+    op: 'converse',
+    figureId: figureId(figure.name),
+    history: toChatHistory(conversationHistory),
+  });
+
+  if (result.op !== 'converse' || !result.content) {
+    throw new AiRequestError('empty_response', 502);
+  }
+  return result.content;
+}

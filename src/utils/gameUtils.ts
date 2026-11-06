@@ -240,3 +240,164 @@ export function getFigureNameTokens(figures: HistoricFigure[]): string[] {
   }
   return [...tokens];
 }
+
+/* ========================================
+   Daily puzzle
+   ======================================== */
+
+/** UTC date of puzzle #1. Changing it renumbers every puzzle, so leave it alone. */
+export const DAILY_EPOCH = '2026-11-04';
+
+/** Free questions to today's figure after the reveal, per puzzle. */
+export const DAILY_ASK_LIMIT = 3;
+
+const MS_PER_DAY = 86_400_000;
+
+/** The calendar date in UTC as `YYYY-MM-DD`: the key everyone shares for a puzzle. */
+export function utcDateKey(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
+function utcMidnight(dateKey: string): number {
+  const [year, month, day] = dateKey.split('-').map(Number);
+  return Date.UTC(year, month - 1, day);
+}
+
+/** The date key `days` days after `dateKey` (negative values go back). */
+export function shiftDateKey(dateKey: string, days: number): string {
+  return utcDateKey(new Date(utcMidnight(dateKey) + days * MS_PER_DAY));
+}
+
+/** Puzzle number for a date key; the epoch is #1. */
+export function dailyNumber(dateKey: string, epoch = DAILY_EPOCH): number {
+  return Math.round((utcMidnight(dateKey) - utcMidnight(epoch)) / MS_PER_DAY) + 1;
+}
+
+/** Milliseconds until the next UTC midnight, when the puzzle changes. */
+export function msUntilNextUtcDay(now: Date): number {
+  const nextMidnight = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1);
+  return Math.max(0, nextMidnight - now.getTime());
+}
+
+/** 32-bit FNV-1a hash of a string: tiny, dependency-free and identical in every browser. */
+export function hashString(input: string): number {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < input.length; i++) {
+    hash ^= input.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return hash >>> 0;
+}
+
+/** mulberry32: a small seeded random number generator, enough to shuffle a roster. */
+function seededRandom(seed: number): () => number {
+  let state = seed >>> 0;
+  return () => {
+    state = (state + 0x6d2b79f5) >>> 0;
+    let t = state;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function seededShuffle<T>(items: readonly T[], seed: number): T[] {
+  const shuffled = [...items];
+  const random = seededRandom(seed);
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
+/**
+ * The order figures appear in during one cycle of `roster.length` days.
+ * When a cycle would open with the figure that closed the previous one, the
+ * first two days swap so no figure runs two days in a row (rosters of three
+ * or more; the swap never touches the last day, so the check stays local).
+ */
+function cycleOrder<T>(roster: readonly T[], cycle: number, epoch: string): T[] {
+  const order = seededShuffle(roster, hashString(`${epoch}#${cycle}`));
+  if (order.length > 2) {
+    const previous = seededShuffle(roster, hashString(`${epoch}#${cycle - 1}`));
+    if (order[0] === previous[previous.length - 1]) {
+      [order[0], order[1]] = [order[1], order[0]];
+    }
+  }
+  return order;
+}
+
+/**
+ * The figure for a UTC date. Days are grouped into cycles as long as the
+ * roster and each cycle is its own deterministic shuffle, so a figure never
+ * repeats until every other figure has had its day. The same date and roster
+ * give the same figure on every device, with no server involved.
+ */
+export function selectDailyFigure<T>(dateKey: string, roster: readonly T[], epoch = DAILY_EPOCH): T | undefined {
+  if (roster.length === 0) return undefined;
+  const dayIndex = dailyNumber(dateKey, epoch) - 1;
+  const cycle = Math.floor(dayIndex / roster.length);
+  const position = ((dayIndex % roster.length) + roster.length) % roster.length;
+  return cycleOrder(roster, cycle, epoch)[position];
+}
+
+export interface DailyPuzzle<T> {
+  dateKey: string;
+  dayNumber: number;
+  figure: T;
+}
+
+/** The puzzle for the UTC day containing `now`, or null when the roster is empty. */
+export function getDailyPuzzle<T>(roster: readonly T[], now: Date): DailyPuzzle<T> | null {
+  const dateKey = utcDateKey(now);
+  const figure = selectDailyFigure(dateKey, roster);
+  return figure === undefined ? null : { dateKey, dayNumber: dailyNumber(dateKey), figure };
+}
+
+export interface DailyShareInput {
+  dayNumber: number;
+  won: boolean;
+  cluesUsed: number;
+  totalClues: number;
+  score: number;
+  url: string;
+}
+
+/** One square per clue revealed, then a tick for a solve or a cross for a give-up. */
+export function dailyResultGrid(cluesUsed: number, totalClues: number, won: boolean): string {
+  const revealed = Math.min(Math.max(cluesUsed, 0), totalClues);
+  return `${'🟦'.repeat(revealed)}${'⬜'.repeat(totalClues - revealed)} ${won ? '✅' : '❌'}`;
+}
+
+/** The Wordle-style result people paste into chats. */
+export function buildDailyShareText({ dayNumber, won, cluesUsed, totalClues, score, url }: DailyShareInput): string {
+  const revealed = Math.min(Math.max(cluesUsed, 0), totalClues);
+  const summary = won ? `${revealed}/${totalClues} clues` : 'gave up';
+  return [
+    `Who Am I? #${dayNumber} · ${summary}`,
+    `${dailyResultGrid(cluesUsed, totalClues, won)} ${score} pts`,
+    url,
+  ].join('\n');
+}
+
+/** `HH:MM:SS` for a countdown. */
+export function formatCountdown(ms: number): string {
+  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  return [hours, minutes, seconds].map(part => String(part).padStart(2, '0')).join(':');
+}
+
+/** Leading titles that are not part of a person's name. */
+const NAME_TITLES = new Set([
+  'queen', 'king', 'prince', 'princess', 'emperor', 'empress', 'saint', 'st', 'st.',
+  'sir', 'dame', 'lady', 'lord', 'pope', 'president', 'general',
+]);
+
+/** The name to address a figure by in short copy: the first name, skipping a leading title. */
+export function figureShortName(name: string): string {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  return words.find(word => !NAME_TITLES.has(word.toLowerCase())) ?? name;
+}

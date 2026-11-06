@@ -35,3 +35,55 @@ export interface ConversationState {
   isTyping: boolean;
   hintLevel: number;
 }
+
+/** Which game the reducer is running: the endless practice game or today's puzzle. */
+export type PlayKind = 'practice' | 'daily';
+
+/** How the current round ended, if it has. */
+export type RoundOutcome = 'won' | 'gave_up';
+
+/** One finished daily puzzle, as kept in the player's stats. */
+export interface DailyRecord {
+  dateKey: string;
+  dayNumber: number;
+  won: boolean;
+  cluesUsed: number;
+  totalClues: number;
+  score: number;
+  misses: number;
+  /** Questions put to the figure after the reveal, kept so the daily allowance survives a reload. */
+  questionsAsked?: number;
+}
+
+export interface DailyStats {
+  version: 1;
+  played: number;
+  won: number;
+  currentStreak: number;
+  bestStreak: number;
+  /** Date key of the last puzzle recorded. */
+  lastPlayed: string | null;
+  /** Wins by the number of clues they needed, keyed by that number. */
+  distribution: Record<string, number>;
+  /** Finished puzzles by date key. */
+  results: Record<string, DailyRecord>;
+}
+
+/** How a daily result left the app: the Web Share sheet, the clipboard, or a text box the player copies from. */
+export type ShareMethod = 'share' | 'clipboard' | 'manual';
+
+/** An unfinished daily round, saved so a reload or a detour into practice picks it up again. */
+export interface DailyProgress {
+  version: 1;
+  dateKey: string;
+  revealed: Array<{ text: string; adaptive: boolean }>;
+  misses: number;
+}
+
+/** The chat with today's figure once the answer is known: the player asks, the figure answers openly. */
+export interface DailyAskState {
+  messages: Message[];
+  /** Questions answered today, counting earlier visits. */
+  used: number;
+  isTyping: boolean;
+}

@@ -1417,3 +1417,331 @@ body {
     opacity: 0.8;
     margin-bottom: var(--spacing-md);
 }
+
+/* ========================================
+   Daily puzzle
+   ======================================== */
+
+/* The daily puzzle keeps the mode switch in view but locked to Classic */
+.toggle-box:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.toggle-container:active .toggle-box:disabled {
+    transform: none;
+}
+
+/* Header buttons share the outlined style of the docs button. */
+.nav-btn {
+    background: var(--white);
+    color: var(--navy);
+    border: 2px solid var(--navy);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-family: var(--font-family);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition);
+    white-space: nowrap;
+}
+
+.nav-btn:hover {
+    background: var(--navy);
+    color: var(--white);
+    transform: translateY(-2px);
+}
+
+.nav-btn:active {
+    transform: translateY(0);
+}
+
+/* Three choices now share the welcome picker, so the buttons sit tighter. */
+.welcome-mode-picker .mode-btn {
+    padding: var(--spacing-xs) var(--spacing-sm);
+}
+
+.daily-result {
+    border: 2px solid var(--navy);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-md);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    align-items: center;
+    text-align: center;
+    box-shadow: 0 4px 0 var(--navy);
+}
+
+.daily-result-title {
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    color: var(--navy);
+}
+
+.daily-result-meta {
+    font-weight: 600;
+    color: var(--navy);
+}
+
+.daily-result-grid {
+    font-size: var(--font-size-xl);
+    letter-spacing: 0.1em;
+    line-height: 1.2;
+}
+
+.daily-result-url {
+    font-size: var(--font-size-xs);
+    color: var(--navy);
+    opacity: 0.7;
+    word-break: break-all;
+}
+
+.daily-result-actions,
+.daily-countdown {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+
+.daily-result .daily-action {
+    margin: 0;
+    flex: 1 1 140px;
+    max-width: 220px;
+}
+
+.daily-result-notice {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--navy);
+}
+
+.daily-share-fallback {
+    width: 100%;
+    max-width: 420px;
+    border: 2px solid var(--navy);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-family: var(--font-family);
+    font-size: var(--font-size-sm);
+    color: var(--navy);
+    background: var(--white);
+    resize: none;
+}
+
+.daily-countdown {
+    border-top: 1px solid var(--navy);
+    padding-top: var(--spacing-sm);
+    font-size: var(--font-size-sm);
+    color: var(--navy);
+}
+
+.daily-countdown-time {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+/* The chat with today's figure after the reveal */
+.daily-result .daily-ask-open {
+    margin: 0;
+    width: 100%;
+    max-width: 320px;
+}
+
+.daily-ask {
+    width: 100%;
+    border: 2px solid var(--navy);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    text-align: left;
+}
+
+.daily-ask-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+}
+
+.daily-ask-title {
+    font-size: var(--font-size-md);
+    font-weight: 700;
+    color: var(--navy);
+}
+
+.daily-ask-intro {
+    font-size: var(--font-size-sm);
+    color: var(--navy);
+    opacity: 0.8;
+}
+
+.daily-ask-messages {
+    flex: none;
+    max-height: 260px;
+}
+
+.daily-ask-messages:empty {
+    display: none;
+}
+
+/* The panel is narrower than the AI-mode chat, so bubbles may use more of it */
+.daily-ask .message {
+    max-width: 90%;
+}
+
+.daily-ask-error {
+    margin: 0;
+    align-self: stretch;
+}
+
+.daily-ask-form {
+    display: flex;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+}
+
+.daily-ask-form .guess-input {
+    min-width: 0;
+    flex: 1 1 200px;
+}
+
+.daily-ask-limit {
+    margin: 0;
+}
+
+/* Stats modal */
+.stats-modal {
+    max-width: 480px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--spacing-xs);
+    margin: var(--spacing-md) 0;
+}
+
+.stat-tile {
+    background: var(--navy);
+    color: var(--white);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-xs);
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 0.15rem;
+}
+
+.stat-tile dt {
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.85;
+}
+
+.stat-tile dd {
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+}
+
+.stats-subtitle {
+    font-size: var(--font-size-md);
+    color: var(--navy);
+    margin-bottom: var(--spacing-xs);
+    text-align: left;
+}
+
+.stats-distribution {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin-bottom: var(--spacing-md);
+}
+
+.dist-row {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.dist-label {
+    width: 1.5rem;
+    font-weight: 600;
+    color: var(--navy);
+    text-align: right;
+}
+
+.dist-track {
+    flex: 1;
+    display: flex;
+}
+
+.dist-bar {
+    background: var(--navy);
+    color: var(--white);
+    border: 2px solid var(--navy);
+    border-radius: var(--radius-sm);
+    padding: 0 var(--spacing-xs);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    text-align: right;
+    min-width: 1.75rem;
+    transition: width var(--transition);
+}
+
+/* Today's win is drawn outlined so it stands out from the filled bars. */
+.dist-bar-today {
+    background: var(--white);
+    color: var(--navy);
+}
+
+.stats-today {
+    font-size: var(--font-size-sm);
+    color: var(--navy);
+    opacity: 0.8;
+}
+
+@media (max-width: 768px) {
+    .navbar {
+        flex-wrap: wrap;
+        gap: var(--spacing-sm);
+    }
+
+    .navbar-controls {
+        flex-wrap: wrap;
+        gap: var(--spacing-xs);
+        width: 100%;
+    }
+
+    .nav-btn,
+    .docs-btn {
+        padding: var(--spacing-xs) var(--spacing-sm);
+    }
+
+    .mode-label {
+        min-width: 0;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* The points never split from their unit; on narrow screens the grid line shrinks to stay on one row. */
+.daily-result-points {
+    white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+    .daily-result-grid {
+        font-size: var(--font-size-lg);
+    }
+}

@@ -1,4 +1,4 @@
-import type { HistoricFigure, Clue, Message } from '../types';
+import type { HistoricFigure, Clue, DailyAskState, Message, PlayKind, RoundOutcome } from '../types';
 import { getDefaultGameMode, type GameMode } from '../services/gameMode';
 import type { ScoreBreakdown } from '../utils/gameUtils';
 
@@ -37,6 +37,13 @@ export interface GameState {
   // Scoring summary
   lastRoundBreakdown: ScoreBreakdown | null;
   lastRoundNumber: number | null;
+
+  // Daily puzzle. Practice is the endless game; daily is one shared figure a day under Classic rules.
+  playKind: PlayKind;
+  daily: { dateKey: string; dayNumber: number } | null;
+  roundOutcome: RoundOutcome | null;
+  /** The open chat with today's figure after the round; empty outside the daily puzzle. */
+  dailyAsk: DailyAskState;
 }
 
 export const initialState: GameState = {
@@ -65,6 +72,10 @@ export const initialState: GameState = {
   outOfQuestions: false,
   lastRoundBreakdown: null,
   lastRoundNumber: null,
+  playKind: 'practice',
+  daily: null,
+  roundOutcome: null,
+  dailyAsk: { messages: [], used: 0, isTyping: false },
 };
 
 export type GameAction =
@@ -85,7 +96,28 @@ export type GameAction =
   | { type: 'SET_OUT_OF_QUESTIONS'; payload: boolean }
   | { type: 'RESET_CONVERSATION'; payload: { initialMessage?: Message } }
   | { type: 'SET_MESSAGES'; payload: Message[] }
-  | { type: 'GIVE_UP' };
+  | { type: 'GIVE_UP' }
+  | {
+      type: 'START_DAILY';
+      payload: {
+        figure: HistoricFigure;
+        dateKey: string;
+        dayNumber: number;
+        /** Set when today's puzzle was already finished: the round is restored as it ended. */
+        priorResult?: { won: boolean; cluesUsed: number; score: number; questionsAsked?: number };
+        /** Set when today's round was left unfinished: the clues and misses so far. */
+        progress?: {
+          revealedClues: Array<Clue & { isAdaptive?: boolean }>;
+          consecutiveMisses: number;
+          adaptiveNotice?: string;
+        };
+      };
+    }
+  // The chat with today's figure after the reveal. A question counts against the
+  // allowance only once it is answered, so a failed request costs nothing.
+  | { type: 'DAILY_ASK_SENT'; payload: Message }
+  | { type: 'DAILY_ASK_ANSWERED'; payload: Message }
+  | { type: 'DAILY_ASK_FAILED'; payload: Message };
 
 export function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
@@ -109,6 +141,10 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         questionsAsked: 0,
         adaptiveHintNotice: '',
         outOfQuestions: false,
+        playKind: 'practice',
+        daily: null,
+        roundOutcome: null,
+        dailyAsk: initialState.dailyAsk,
       };
 
     case 'START_GAME':
@@ -178,6 +214,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         consecutiveMisses: 0,
         adaptiveHintNotice: '',
         outOfQuestions: false,
+        roundOutcome: null,
       };
     }
 
@@ -215,6 +252,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         outOfQuestions: false, // Reset this just in case
         lastRoundBreakdown: action.payload.breakdown ?? state.lastRoundBreakdown,
         lastRoundNumber: action.payload.breakdown ? state.round : state.lastRoundNumber,
+        roundOutcome: 'won',
       };
 
     case 'SET_FEEDBACK':
@@ -268,8 +306,73 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         consecutiveMisses: 0,
         adaptiveHintNotice: '',
         outOfQuestions: false,
+        roundOutcome: 'gave_up',
       };
     }
+
+    case 'START_DAILY': {
+      const { figure, dateKey, dayNumber, priorResult, progress } = action.payload;
+      const fresh: GameState = {
+        ...initialState,
+        shuffledFigures: [figure],
+        showWelcome: false,
+        llmMode: state.llmMode, // The practice preference survives; the hook applies Classic rules while daily runs.
+        aiStatus: state.aiStatus,
+        playKind: 'daily',
+        daily: { dateKey, dayNumber },
+      };
+      if (!priorResult) {
+        // Left unfinished earlier today: pick up with the same clues and misses.
+        if (progress && progress.revealedClues.length > 0) {
+          return {
+            ...fresh,
+            revealedClues: progress.revealedClues,
+            consecutiveMisses: progress.consecutiveMisses,
+            adaptiveHintNotice: progress.adaptiveNotice ?? '',
+          };
+        }
+        return fresh;
+      }
+
+      // Already played today: show the round as it ended, with no way to play it again.
+      const cluesUsed = Math.min(Math.max(priorResult.cluesUsed, 1), figure.clues.length);
+      return {
+        ...fresh,
+        revealedClues: figure.clues.slice(0, cluesUsed),
+        score: priorResult.score,
+        isRevealed: true,
+        inputDisabled: true,
+        showNextButton: true,
+        roundOutcome: priorResult.won ? 'won' : 'gave_up',
+        feedbackMessage: priorResult.won
+          ? `You already solved today's puzzle: it was ${figure.name}. Come back tomorrow for a new one.`
+          : `You already played today's puzzle. The answer was ${figure.name}. Come back tomorrow for a new one.`,
+        feedbackType: priorResult.won ? 'success' : 'error',
+        dailyAsk: { ...initialState.dailyAsk, used: priorResult.questionsAsked ?? 0 },
+      };
+    }
+
+    case 'DAILY_ASK_SENT':
+      return {
+        ...state,
+        dailyAsk: { ...state.dailyAsk, messages: [...state.dailyAsk.messages, action.payload], isTyping: true },
+      };
+
+    case 'DAILY_ASK_ANSWERED':
+      return {
+        ...state,
+        dailyAsk: {
+          messages: [...state.dailyAsk.messages, action.payload],
+          used: state.dailyAsk.used + 1,
+          isTyping: false,
+        },
+      };
+
+    case 'DAILY_ASK_FAILED':
+      return {
+        ...state,
+        dailyAsk: { ...state.dailyAsk, messages: [...state.dailyAsk.messages, action.payload], isTyping: false },
+      };
 
     default:
       return state;
