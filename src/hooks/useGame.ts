@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
-import { getEnabledFigures } from '../data/figuresConfig';
+import { allFigures, getEnabledFigures, toFigure } from '../data/figuresConfig';
 import { calculatePoints, shuffleArray, selectNextClue, llmScoreWeights, isCloseMatch, getFigureNameTokens, getDailyPuzzle, utcDateKey, DAILY_ASK_LIMIT } from '../utils/gameUtils';
 import { AiRequestError, converseWithFigure, describeAiError, fetchAiStatus, getInitialGreeting, sendMessage, validateGuess } from '../services/llmService';
 import { rememberGameMode, type GameMode } from '../services/gameMode';
@@ -551,7 +551,8 @@ export function useGame() {
     // Today's puzzle: the same figure for everyone, one attempt. A finished
     // puzzle comes back as it ended, with its result instead of a replay.
     const startDaily = useCallback(() => {
-        const puzzle = getDailyPuzzle(getEnabledFigures(), new Date());
+        // The full roster: disabled figures keep their slots so nobody else's day moves.
+        const puzzle = getDailyPuzzle(allFigures, new Date());
         if (!puzzle) return;
         setTodayKey(puzzle.dateKey);
         const prior = getDailyResult(dailyStats, puzzle.dateKey);
@@ -567,7 +568,7 @@ export function useGame() {
         dispatch({
             type: 'START_DAILY',
             payload: {
-                figure: puzzle.figure,
+                figure: toFigure(puzzle.figure),
                 dateKey: puzzle.dateKey,
                 dayNumber: puzzle.dayNumber,
                 priorResult: prior

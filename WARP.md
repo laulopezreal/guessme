@@ -144,7 +144,7 @@ guessme/
 
 ### Adding New Historic Figures
 
-Edit the `allFigures` array in `src/data/figuresConfig.ts`. See `FIGURES.md`. `npm test` checks every figure has five clues and a unique id.
+Add to the end of the `allFigures` array in `src/data/figuresConfig.ts`, with `dailyFrom` set to the day the figure ships or later. See `FIGURES.md`. `npm test` checks every figure has five clues and a unique id, and that the first daily cycle has not moved.
 
 ### Modifying Scoring
 
@@ -163,6 +163,7 @@ All styles are in `src/App.css` using CSS custom properties defined in `:root`. 
 - **Secrets**: anything prefixed `VITE_` is embedded in the public bundle. Server secrets use plain names and reach the Worker through `.env.local` locally and `wrangler secret put` in production
 - **Type-only imports**: Use `import type` for TypeScript interfaces (required by `verbatimModuleSyntax`)
 - **Shared modules**: `figuresConfig.ts` and `llmPrompts.ts` are bundled into the Worker; keep them free of DOM and Node APIs
+- **Daily schedule**: `selectDailyFigure` builds each cycle from array positions and `dailyFrom` dates, so never reorder or delete entries in `allFigures`; disable them instead (see `FIGURES.md`)
 - **Case-insensitive matching**: All guess validation converts to lowercase
 - **Answer flexibility**: Always add common variations to `alternateNames` (e.g., "einstein" for "Albert Einstein")
 - **Clue progression**: First clue auto-reveals when figure loads; remaining 4 require button clicks

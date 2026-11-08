@@ -13,16 +13,17 @@ This file is shared with the Cloudflare Worker that powers AI Mode, so it must s
 - **Enabled Figures**: 60
 - **Total Figures**: 60
 
-The daily puzzle cycles through the enabled roster one figure per day, so every figure added pushes the first repeat further out.
+The daily puzzle walks the roster in cycles, one figure per day. Every figure added makes later cycles longer, and no roster change touches the cycle in progress (see [How the Daily Puzzle Uses the Roster](#how-the-daily-puzzle-uses-the-roster)).
 
 ## Adding a New Figure
 
 1. Open `src/data/figuresConfig.ts`
-2. Add a new object to the `allFigures` array:
+2. Add a new object at the end of the `allFigures` array:
 
 ```typescript
 {
   enabled: true,  // Set to true when ready to use
+  dailyFrom: '2027-01-15',  // The day this ships, or later
   name: "Full Name",
   alternateNames: ["alternate1", "nickname"],
   eraTags: ["Era", "Field"],              // optional, shown under the silhouette
@@ -98,10 +99,20 @@ Every alternate name is a full-credit answer on its own, so leave out bare title
 }
 ```
 
-This keeps the data intact for future use.
+This keeps the data intact for future use, and keeps the figure's place in the daily schedule: another figure stands in on its days.
 
-### To Remove Completely (Hard Delete)
-Delete the entire object from the array. **Warning**: This permanently removes the figure.
+### Do Not Delete Figures
+Deleting an object from the array shifts the daily schedule for everyone. Disable the figure instead.
+
+## How the Daily Puzzle Uses the Roster
+
+The daily schedule is calculated in the browser from the date and `allFigures`, so a careless roster edit can change which figure a day gets. These rules keep every day stable:
+
+- **Set `dailyFrom` to the day the figure ships, or later.** Never copy an older date from a neighbouring figure. The figure appears in Practice right away and joins the daily puzzle at the first cycle that starts on or after that date. A date on or before the start of the cycle in progress changes the puzzle people are playing today.
+- **Never reorder or delete entries.** The shuffle works on array positions. To pull a figure, set `enabled: false`, and only that figure's days change.
+- **Renaming a figure and editing its clues are safe.**
+
+Cycles run back to back from `DAILY_EPOCH`, and each lasts as many days as it has figures. The first cycle has 60 figures and ends on 2027-01-02, so the next one starts on 2027-01-03.
 
 ## Testing Your Changes
 
@@ -116,7 +127,7 @@ Delete the entire object from the array. **Warning**: This permanently removes t
    - **Guess Validation**: Try various name formats to ensure alternate names work
 
 3. Run `npm test`:
-   - `src/data/figuresConfig.test.ts` checks every figure has exactly five clues, at least one `easy` clue, a unique id, a voice line and era tags, lower-case alternate names, and that no clue contains the name or an alternate name; it also requires at least 50 enabled figures
+   - `src/data/figuresConfig.test.ts` checks every figure has exactly five clues, at least one `easy` clue, a unique id, a voice line and era tags, lower-case alternate names, and that no clue contains the name or an alternate name; it also requires at least 50 enabled figures and pins the first daily cycle day by day
    - `src/utils/gameUtils.test.ts` checks guess matching against the roster (titles and epithets alone never win)
    - The "How to Play" overlay shows how many figures are enabled
 

@@ -41,7 +41,7 @@ AI Mode is only offered when the server has an OpenAI key configured. Without on
 
 One figure per UTC calendar day, the same for everyone, played under Classic rules with a single attempt. Pick **Daily** on the welcome screen or in the header; **Practice** takes you back to the endless game.
 
-- The figure is chosen deterministically from the enabled roster by `selectDailyFigure` in `src/utils/gameUtils.ts`: days are grouped into cycles as long as the roster, each cycle is a seeded shuffle, so no figure repeats until every other one has had its day. No server is involved, so every device agrees. Puzzle #1 is `DAILY_EPOCH` (2026-11-04).
+- The figure is chosen deterministically from the roster by `selectDailyFigure` in `src/utils/gameUtils.ts`: days are grouped into cycles, each a seeded shuffle of the figures whose `dailyFrom` date had arrived when the cycle began, so no figure repeats until every other one has had its day. A roster change never touches a cycle in progress: new figures wait for the next cycle, and a disabled figure's days go to a stand-in. No server is involved, so every device agrees. Puzzle #1 is `DAILY_EPOCH` (2026-11-04).
 - When the round ends you get a result panel with a Wordle-style grid (one square per clue revealed, a tick for a solve or a cross for a give-up), the score, the puzzle number and the site URL. **Share** uses the Web Share sheet where the browser has one, **Copy result** uses the clipboard, and if both are blocked the text appears in a box to copy by hand.
 - Stats live in `localStorage` under the versioned key `guessme:daily-stats:v1`: games played, win rate, current and best streak, and how many clues your wins needed. Open them from the header or the result panel.
 - An unfinished round is saved in the browser too (`guessme:daily-progress:v1`), so a reload or a detour into practice resumes it with the same clues and misses.
@@ -152,11 +152,12 @@ npm test             # Run the Vitest suite (add --run for a single pass)
 
 ## 🧩 Adding New Historic Figures
 
-Edit `src/data/figuresConfig.ts` and add to the `allFigures` array:
+Edit `src/data/figuresConfig.ts` and add to the end of the `allFigures` array:
 
 ```typescript
 {
   enabled: true,
+  dailyFrom: '2027-01-15',  // The day this ships, or later
   name: "Marie Curie",
   alternateNames: ["curie", "marie", "marie curie", "marie sklodowska-curie"],
   eraTags: ["Industrial Age", "Chemistry"],
@@ -174,6 +175,7 @@ Edit `src/data/figuresConfig.ts` and add to the `allFigures` array:
 **Requirements:**
 - Exactly 5 clues, ordered from vague to specific, each tagged `hard`, `medium` or `easy`
 - Include common name variations in `alternateNames` (lowercase)
+- Set `dailyFrom` to the day the figure ships, or later, so today's daily puzzle stays put
 - TypeScript will validate the structure automatically, and `npm test` checks every figure has five clues and a unique id
 
 See [FIGURES.md](FIGURES.md) for the full guide.
