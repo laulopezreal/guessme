@@ -144,7 +144,7 @@ guessme/
 
 ### Adding New Historic Figures
 
-Add to the end of the `allFigures` array in `src/data/figuresConfig.ts`, with `dailyFrom` set to the day the figure ships or later. See `FIGURES.md`. `npm test` checks every figure has five clues and a unique id, and that the first daily cycle has not moved.
+Add to the end of the `allFigures` array in `src/data/figuresConfig.ts`, with `dailyFrom` set to the day the figure ships or later. See `FIGURES.md`. `npm test` checks every figure has five clues and a unique id, that no clue or era tag gives the name away, and that the first daily cycle has not moved.
 
 ### Modifying Scoring
 

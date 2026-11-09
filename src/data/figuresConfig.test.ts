@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import type { HistoricFigure } from '../types';
 import { allFigures, figureId, getEnabledFigures, getFigureById, getFigureCount } from './figuresConfig';
-import { DAILY_EPOCH, getFigureNameTokens, selectDailyFigure, shiftDateKey } from '../utils/gameUtils';
+import { DAILY_EPOCH, getFigureNameTokens, isCloseMatch, selectDailyFigure, shiftDateKey } from '../utils/gameUtils';
 
 /**
  * The first daily cycle as it shipped, one name per day from 2026-11-04.
@@ -69,6 +70,19 @@ const FIRST_DAILY_CYCLE = [
     "Archimedes",
 ];
 
+/**
+ * Mirrors the Classic-mode check in useGame: a guess wins when it matches the
+ * figure's name or any of its alternate names.
+ */
+function winsRound(guess: string, figure: HistoricFigure): boolean {
+    return [figure.name, ...figure.alternateNames].some(answer => isCloseMatch(guess, answer));
+}
+
+/** What a player could copy from an era tag into the guess box: the whole tag, or any one word. */
+function guessesFromTag(tag: string): string[] {
+    return [tag, ...tag.split(/[^\p{L}\p{N}']+/u).filter(Boolean)];
+}
+
 describe('figuresConfig', () => {
     it('derives stable, URL-safe ids from names', () => {
         expect(figureId('Albert Einstein')).toBe('albert-einstein');
@@ -115,6 +129,30 @@ describe('figuresConfig', () => {
                     expect(text.includes(name), `${figure.name}: "${clue.text}" contains "${name}"`).toBe(false);
                 }
             }
+        }
+    });
+
+    it('never shows an era tag that would win the round if typed as a guess', () => {
+        // Era tags sit under the silhouette from the first second, before any clue.
+        for (const figure of allFigures) {
+            for (const tag of figure.eraTags ?? []) {
+                for (const guess of guessesFromTag(tag)) {
+                    expect(winsRound(guess, figure), `${figure.name}: typing "${guess}" from the era tag "${tag}" wins`).toBe(false);
+                }
+            }
+        }
+    });
+
+    it('counts a tag built from the name as a winning guess', () => {
+        // Tags that gave the answer away, so the check above cannot quietly go blind.
+        const giveaways: [name: string, tag: string][] = [
+            ['Napoleon Bonaparte', 'Napoleonic Era'],
+            ['Queen Elizabeth I', 'Elizabethan'],
+            ['Queen Elizabeth I', 'Tudor England'], // "elizabeth tudor" is an accepted answer
+        ];
+        for (const [name, tag] of giveaways) {
+            const figure = allFigures.find(candidate => candidate.name === name);
+            expect(figure && guessesFromTag(tag).some(guess => winsRound(guess, figure)), `${name}: "${tag}"`).toBe(true);
         }
     });
 

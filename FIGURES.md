@@ -110,7 +110,7 @@ The daily schedule is calculated in the browser from the date and `allFigures`, 
 
 - **Set `dailyFrom` to the day the figure ships, or later.** Never copy an older date from a neighbouring figure. The figure appears in Practice right away and joins the daily puzzle at the first cycle that starts on or after that date. A date on or before the start of the cycle in progress changes the puzzle people are playing today.
 - **Never reorder or delete entries.** The shuffle works on array positions. To pull a figure, set `enabled: false`, and only that figure's days change.
-- **Renaming a figure and editing its clues are safe.**
+- **Renaming a figure and editing its clues or era tags are safe.**
 
 Cycles run back to back from `DAILY_EPOCH`, and each lasts as many days as it has figures. The first cycle has 60 figures and ends on 2027-01-02, so the next one starts on 2027-01-03.
 
@@ -127,7 +127,7 @@ Cycles run back to back from `DAILY_EPOCH`, and each lasts as many days as it ha
    - **Guess Validation**: Try various name formats to ensure alternate names work
 
 3. Run `npm test`:
-   - `src/data/figuresConfig.test.ts` checks every figure has exactly five clues, at least one `easy` clue, a unique id, a voice line and era tags, lower-case alternate names, and that no clue contains the name or an alternate name; it also requires at least 50 enabled figures and pins the first daily cycle day by day
+   - `src/data/figuresConfig.test.ts` checks every figure has exactly five clues, at least one `easy` clue, a unique id, a voice line and era tags, lower-case alternate names, that no clue contains the name or an alternate name, and that no era tag, or any word of one, would win the round as a guess; it also requires at least 50 enabled figures and pins the first daily cycle day by day
    - `src/utils/gameUtils.test.ts` checks guess matching against the roster (titles and epithets alone never win)
    - The "How to Play" overlay shows how many figures are enabled
 
@@ -160,6 +160,10 @@ Cycles run back to back from `DAILY_EPOCH`, and each lasts as many days as it ha
 - Very obscure nicknames
 - Misspellings (the AI handles typos)
 - Names in other languages (unless commonly used in English)
+
+### Choosing Era Tags
+
+Era tags sit under the silhouette from the first second of a round, before any clue, so they name the period and the field, never the figure. A test fails if typing a tag, or any single word of it, would win the round. "Napoleonic Era" fails for Napoleon Bonaparte, and "Tudor England" fails for Elizabeth I because "elizabeth tudor" is one of her alternate names. A word built from another figure's name is fine: "Elizabethan" is a fair era tag for Shakespeare.
 
 ### AI Mode Considerations
 
