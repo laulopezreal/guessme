@@ -77,7 +77,7 @@ Suites: `src/reducers/gameReducer.test.ts` (state transitions, including the dai
 ### File Structure
 ```
 guessme/
-├── public/                     # Static assets (fonts)
+├── public/                     # Static assets (fonts, og-image.png link preview rendered from og-image.svg)
 ├── src/
 │   ├── components/             # React components (Header has the mode toggle)
 │   ├── data/
