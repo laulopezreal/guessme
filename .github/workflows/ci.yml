@@ -1,0 +1,60 @@
+name: CI
+
+# Runs on every pull request, including stacked ones that target another
+# branch, and on every push to main. There is no `branches:` or `paths:` filter
+# on pull_request, so the check always reports and can be a required check.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Nothing here writes to the repository, so the token stays read-only.
+permissions:
+  contents: read
+
+# A newer push to the same pull request, or to main, supersedes the run in
+# progress. For pull requests github.ref is refs/pull/<number>/merge, so two
+# pull requests never cancel each other even if their branches share a name.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      # Node 22 is a floor, not a preference: wrangler 4 requires >= 22.
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # `wrangler types && tsc -b`. wrangler types writes the gitignored
+      # worker-configuration.d.ts from wrangler.jsonc, then tsc checks the app,
+      # the Worker and the tool configs against it. No Cloudflare login needed.
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      # Includes the roster guards that fail when a roster change would shift
+      # the shared daily puzzle schedule.
+      - name: Test
+        run: npx vitest run
+
+      # The command the Cloudflare Pages project runs on deploy, so a build
+      # that fails here would fail the deploy too.
+      - name: Build
+        run: npm run build
