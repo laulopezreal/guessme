@@ -83,6 +83,49 @@ function guessesFromTag(tag: string): string[] {
     return [tag, ...tag.split(/[^\p{L}\p{N}']+/u).filter(Boolean)];
 }
 
+/**
+ * What a player could copy from a clue into the guess box: any one word as
+ * written ("nation's", "one-dollar"), or any part of one between apostrophes
+ * and hyphens ("nation", "dollar"). Surrounding punctuation is dropped.
+ */
+function guessesFromClue(text: string): string[] {
+    const asWritten = text.split(/\s+/).map(word => word.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, ''));
+    const parts = text.split(/[^\p{L}\p{N}]+/u);
+    return [...new Set([...asWritten, ...parts])].filter(Boolean);
+}
+
+/**
+ * Clue words that win the round only because the matcher is lenient, not
+ * because the clue names the figure: ordinary words ("During" for Alan Turing)
+ * and fair hints ("Bolivia" for Simón Bolívar). Whether the matcher should keep
+ * accepting them is a separate decision, so the clues keep them. Delete an
+ * entry once its word stops winning; a test below fails until you do.
+ */
+const LENIENT_MATCH_CLUE_WORDS: [name: string, word: string][] = [
+    // Near spellings: the fuzzy match allows two edits in an answer of 5-9 characters and three in a longer one.
+    ['Simón Bolívar', 'Bolivia'], // two edits from "bolivar"; the clue lists the countries he freed
+    ['Charles Darwin', 'shares'], // two edits from "charles"
+    ['Alan Turing', 'During'], // one edit from "turing"
+    ['Wu Zetian', 'empress'], // three characters short of "empress wu": the fuzzy match lets in a title the partial match blocks
+    // Fragments: any piece of an answer that is four or more letters long and
+    // not on the stopword list wins, so part of a name, or a place, title or
+    // epithet in a longer alternate name, wins on its own.
+    ['Florence Nightingale', 'night'], // inside "nightingale"
+    ['Florence Nightingale', 'lamp'], // inside "the lady with the lamp"
+    ['Hatshepsut', 'pharaoh'], // inside "pharaoh hatshepsut"
+    ['Zheng He', 'admiral'], // inside "admiral zheng he"
+    ['Suleiman the Magnificent', 'sultan'], // inside "sultan suleiman"
+    ['Suleiman the Magnificent', 'Lawgiver'], // inside "suleiman the lawgiver"
+    ['Mansa Musa', 'Mali'], // inside "musa i of mali"
+    ['Alexander the Great', 'Macedon'], // inside "alexander of macedon"
+    ['Catherine the Great', 'Russia'], // inside "catherine ii of russia"
+    ['Archimedes', 'Syracuse'], // inside "archimedes of syracuse"
+];
+
+function isLenientMatchClueWord(figure: HistoricFigure, guess: string): boolean {
+    return LENIENT_MATCH_CLUE_WORDS.some(([name, word]) => name === figure.name && word.toLowerCase() === guess.toLowerCase());
+}
+
 describe('figuresConfig', () => {
     it('derives stable, URL-safe ids from names', () => {
         expect(figureId('Albert Einstein')).toBe('albert-einstein');
@@ -153,6 +196,41 @@ describe('figuresConfig', () => {
         for (const [name, tag] of giveaways) {
             const figure = allFigures.find(candidate => candidate.name === name);
             expect(figure && guessesFromTag(tag).some(guess => winsRound(guess, figure)), `${name}: "${tag}"`).toBe(true);
+        }
+    });
+
+    it('never puts a word in a clue that would win the round if typed as a guess', () => {
+        // Every revealed clue stays on screen while the player guesses.
+        const winning: string[] = [];
+        for (const figure of allFigures) {
+            for (const clue of figure.clues) {
+                for (const guess of guessesFromClue(clue.text)) {
+                    if (winsRound(guess, figure) && !isLenientMatchClueWord(figure, guess)) {
+                        winning.push(`${figure.name}: typing "${guess}" from "${clue.text}" wins`);
+                    }
+                }
+            }
+        }
+        expect(winning).toEqual([]);
+    });
+
+    it('counts a clue word built from the name as a winning guess', () => {
+        // A clue that gave the answer away, so the check above cannot quietly go blind.
+        const giveaways: [name: string, clue: string][] = [
+            ['Galileo Galilei', 'I discovered four moons of Jupiter, now called the Galilean moons.'], // "galilean" is two edits from "galileo"
+        ];
+        for (const [name, clue] of giveaways) {
+            const figure = allFigures.find(candidate => candidate.name === name);
+            expect(figure && guessesFromClue(clue).some(guess => winsRound(guess, figure)), `${name}: "${clue}"`).toBe(true);
+        }
+    });
+
+    it('exempts only clue words that are still in a clue and still win', () => {
+        // Keeps the exemption list a true record of what the matcher still lets through.
+        for (const [name, word] of LENIENT_MATCH_CLUE_WORDS) {
+            const figure = allFigures.find(candidate => candidate.name === name);
+            const inClue = figure?.clues.some(clue => guessesFromClue(clue.text).some(guess => guess.toLowerCase() === word.toLowerCase()));
+            expect(inClue && figure && winsRound(word, figure), `${name}: "${word}" no longer wins or left the clues, so drop its exemption`).toBe(true);
         }
     });
 

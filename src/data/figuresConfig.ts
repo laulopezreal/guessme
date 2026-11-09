@@ -117,7 +117,7 @@ export const allFigures: HistoricFigureConfig[] = [
       { text: "I was born in Pisa, Italy in 1564.", difficulty: 'hard' },
       { text: "I am known as the father of modern observational astronomy.", difficulty: 'medium' },
       { text: "I improved the telescope and made astronomical observations.", difficulty: 'medium' },
-      { text: "I discovered four moons of Jupiter, now called the Galilean moons.", difficulty: 'easy' },
+      { text: "I discovered four moons of Jupiter, now known as Io, Europa, Ganymede and Callisto.", difficulty: 'easy' },
       { text: "I was tried by the Inquisition for supporting heliocentrism (the idea that Earth orbits the Sun).", difficulty: 'easy' }
     ]
   },

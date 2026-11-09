@@ -127,7 +127,7 @@ Cycles run back to back from `DAILY_EPOCH`, and each lasts as many days as it ha
    - **Guess Validation**: Try various name formats to ensure alternate names work
 
 3. Run `npm test`:
-   - `src/data/figuresConfig.test.ts` checks every figure has exactly five clues, at least one `easy` clue, a unique id, a voice line and era tags, lower-case alternate names, that no clue contains the name or an alternate name, and that no era tag, or any word of one, would win the round as a guess; it also requires at least 50 enabled figures and pins the first daily cycle day by day
+   - `src/data/figuresConfig.test.ts` checks every figure has exactly five clues, at least one `easy` clue, a unique id, a voice line and era tags, lower-case alternate names, that no clue contains the name or an alternate name, that no single word of a clue would win the round as a guess (apart from the exemptions listed in the test), and that no era tag, or any word of one, would win the round as a guess; it also requires at least 50 enabled figures and pins the first daily cycle day by day
    - `src/utils/gameUtils.test.ts` checks guess matching against the roster (titles and epithets alone never win)
    - The "How to Play" overlay shows how many figures are enabled
 
@@ -143,6 +143,7 @@ Cycles run back to back from `DAILY_EPOCH`, and each lasts as many days as it ha
 
 ❌ **Don't**:
 - Reveal the name directly (a test fails if a clue contains the name or any alternate name, so "the Elizabethan era" cannot be a clue for Elizabeth I)
+- Use a word that wins the round when typed as a guess (a test fails if one does, so "the Galilean moons" cannot be a clue for Galileo Galilei: "galilean" is two edits from "galileo"). A word that wins only because the guess matcher is lenient, such as "Bolivia" for Simón Bolívar or "During" for Alan Turing, goes in `LENIENT_MATCH_CLUE_WORDS` in `src/data/figuresConfig.test.ts` with the reason
 - Name another figure from the roster as if they were the answer; mentioning them as an ally or rival is fine
 - Make clues too easy at the start
 - Make clues too obscure at the end
