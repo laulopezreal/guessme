@@ -143,7 +143,7 @@ Cycles run back to back from `DAILY_EPOCH`, and each lasts as many days as it ha
 
 ❌ **Don't**:
 - Reveal the name directly (a test fails if a clue contains the name or any alternate name, so "the Elizabethan era" cannot be a clue for Elizabeth I)
-- Use a word that wins the round when typed as a guess (a test fails if one does, so "the Galilean moons" cannot be a clue for Galileo Galilei: "galilean" is two edits from "galileo"). A word that wins only because the guess matcher is lenient, such as "Bolivia" for Simón Bolívar or "During" for Alan Turing, goes in `LENIENT_MATCH_CLUE_WORDS` in `src/data/figuresConfig.test.ts` with the reason
+- Use a word that wins the round when typed as a guess (a test fails if one does, so "the Galilean moons" cannot be a clue for Galileo Galilei, because "galilean" is two edits from "galileo", and "Bolivia" cannot be one for Simón Bolívar, because it is two edits from "bolivar"). Reword the clue. If the word wins only because the guess matcher is lenient (an ordinary word such as "During" for Alan Turing, or a place inside a long alternate name such as "Syracuse" for Archimedes), you can add it to `LENIENT_MATCH_CLUE_WORDS` in `src/data/figuresConfig.test.ts` with the reason instead
 - Name another figure from the roster as if they were the answer; mentioning them as an ally or rival is fine
 - Make clues too easy at the start
 - Make clues too obscure at the end

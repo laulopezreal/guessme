@@ -97,13 +97,12 @@ function guessesFromClue(text: string): string[] {
 /**
  * Clue words that win the round only because the matcher is lenient, not
  * because the clue names the figure: ordinary words ("During" for Alan Turing)
- * and fair hints ("Bolivia" for Simón Bolívar). Whether the matcher should keep
+ * and fair hints ("Syracuse" for Archimedes). Whether the matcher should keep
  * accepting them is a separate decision, so the clues keep them. Delete an
  * entry once its word stops winning; a test below fails until you do.
  */
 const LENIENT_MATCH_CLUE_WORDS: [name: string, word: string][] = [
     // Near spellings: the fuzzy match allows two edits in an answer of 5-9 characters and three in a longer one.
-    ['Simón Bolívar', 'Bolivia'], // two edits from "bolivar"; the clue lists the countries he freed
     ['Charles Darwin', 'shares'], // two edits from "charles"
     ['Alan Turing', 'During'], // one edit from "turing"
     ['Wu Zetian', 'empress'], // three characters short of "empress wu": the fuzzy match lets in a title the partial match blocks
@@ -215,9 +214,10 @@ describe('figuresConfig', () => {
     });
 
     it('counts a clue word built from the name as a winning guess', () => {
-        // A clue that gave the answer away, so the check above cannot quietly go blind.
+        // Clues that gave the answer away, so the check above cannot quietly go blind.
         const giveaways: [name: string, clue: string][] = [
             ['Galileo Galilei', 'I discovered four moons of Jupiter, now called the Galilean moons.'], // "galilean" is two edits from "galileo"
+            ['Simón Bolívar', 'I led the independence struggle that freed Venezuela, Colombia, Ecuador, Peru and Bolivia from Spain.'], // "bolivia" is two edits from "bolivar"
         ];
         for (const [name, clue] of giveaways) {
             const figure = allFigures.find(candidate => candidate.name === name);
