@@ -117,7 +117,7 @@ export const allFigures: HistoricFigureConfig[] = [
       { text: "I was born in Pisa, Italy in 1564.", difficulty: 'hard' },
       { text: "I am known as the father of modern observational astronomy.", difficulty: 'medium' },
       { text: "I improved the telescope and made astronomical observations.", difficulty: 'medium' },
-      { text: "I discovered four moons of Jupiter, now called the Galilean moons.", difficulty: 'easy' },
+      { text: "I discovered four moons of Jupiter, now known as Io, Europa, Ganymede and Callisto.", difficulty: 'easy' },
       { text: "I was tried by the Inquisition for supporting heliocentrism (the idea that Earth orbits the Sun).", difficulty: 'easy' }
     ]
   },
@@ -554,8 +554,8 @@ export const allFigures: HistoricFigureConfig[] = [
     clues: [
       { text: "I was born in Caracas in 1783 into a wealthy Creole family, and was orphaned as a boy.", difficulty: 'hard' },
       { text: "Educated in Europe, I swore an oath to free my homeland from Spanish rule.", difficulty: 'medium' },
-      { text: "I led the independence struggle that freed Venezuela, Colombia, Ecuador, Peru and Bolivia from Spain.", difficulty: 'medium' },
-      { text: "One of those countries is named after me, and I dreamed of uniting South America into one great republic.", difficulty: 'easy' },
+      { text: "I led the independence struggle that freed Venezuela, Colombia, Ecuador and Peru from Spain.", difficulty: 'medium' },
+      { text: "A country is named after me, and I dreamed of uniting South America into one great republic.", difficulty: 'easy' },
       { text: "Statues of me on horseback stand in capitals across Latin America, where I am honoured as the man who freed a continent.", difficulty: 'easy' }
     ]
   },
