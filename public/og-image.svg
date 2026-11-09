@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <!--
+    Source of public/og-image.png, the link preview image that index.html names
+    in og:image. Edit this file, then re-render the PNG as described under
+    "Link previews" in README.md.
+
+    Navy #001f3f and white only. The text uses BST Spyre Book, the game's font,
+    from the woff2 next to this file. The font has a single weight, so
+    font-weight 700 makes the browser embolden it, as the game's own title does.
+  -->
+  <title>Who Am I? Guess today’s historic figure. guessme.world</title>
+  <style>
+    @font-face {
+      font-family: 'BST Spyre Book';
+      src: url('BST-spyre-book.woff2') format('woff2');
+    }
+    text { font-family: 'BST Spyre Book', Georgia, serif; }
+  </style>
+
+  <rect width="1200" height="630" fill="#001f3f"/>
+
+  <!-- The game's mystery silhouette (a navy disc with a white "?"), inverted for the navy background -->
+  <g id="silhouette">
+    <circle cx="223" cy="315" r="140" fill="#ffffff"/>
+    <text x="223" y="374" font-size="168" font-weight="700" text-anchor="middle"
+          fill="#001f3f" stroke="#001f3f" stroke-width="3">?</text>
+  </g>
+
+  <text id="title" x="425" y="276" font-size="136" font-weight="700" letter-spacing="-2.7"
+        fill="#ffffff">Who Am I?</text>
+
+  <text id="tagline" x="422" y="350" font-size="54" fill="#ffffff">Guess today’s historic figure</text>
+
+  <!-- Pill outline like the game's era tags -->
+  <g id="domain">
+    <rect x="425.5" y="400" width="310" height="64" rx="32" fill="none" stroke="#ffffff" stroke-width="3"/>
+    <text x="580.5" y="443" font-size="38" text-anchor="middle" fill="#ffffff">guessme.world</text>
+  </g>
+</svg>
