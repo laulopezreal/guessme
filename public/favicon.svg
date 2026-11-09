@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" preserveAspectRatio="xMinYMin meet">
+  <!--
+    Site icon: the game's mystery silhouette, a navy disc with a white "?".
+    index.html links it along with favicon.ico and apple-touch-icon.png, both
+    rendered from this file as described under "Link previews" in README.md.
+
+    Navy #001f3f and white only. The "?" is drawn as shapes, not text: an icon
+    loads as an image, so it can't fetch the game's font. Its straight edges
+    and outer extremes fall on whole pixels at 16 and 32 px, which keeps it
+    sharp in a browser tab.
+
+    xMinYMin pins the drawing to the top-left corner. That changes nothing in
+    a square icon slot, but headless Chrome on macOS lays out a 180 px window
+    500 px wide and crops the screenshot, so a centred drawing would land
+    off-frame in apple-touch-icon.png.
+  -->
+  <circle cx="16" cy="16" r="16" fill="#001f3f"/>
+  <!-- Hook and stem as one stroke, then the dot -->
+  <path d="M12 12a4 4 0 0 1 8 0c0 2.6-4 2.6-4 5v3" fill="none" stroke="#ffffff" stroke-width="4"/>
+  <circle cx="16" cy="24" r="2" fill="#ffffff"/>
+</svg>

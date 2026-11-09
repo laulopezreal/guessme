@@ -141,7 +141,7 @@ export const allFigures: HistoricFigureConfig[] = [
     dailyFrom: '2026-11-04',
     name: "Napoleon Bonaparte",
     alternateNames: ["napoleon", "bonaparte", "napoleon bonaparte"],
-    eraTags: ["Napoleonic Era", "Military"],
+    eraTags: ["French Revolution", "Military"],
     voiceLine: "Impossible is a word to be found only in the dictionary of fools. March to the next battle?",
     clues: [
       { text: "I was born on the island of Corsica in 1769.", difficulty: 'hard' },
@@ -171,7 +171,7 @@ export const allFigures: HistoricFigureConfig[] = [
     dailyFrom: '2026-11-04',
     name: "Queen Elizabeth I",
     alternateNames: ["elizabeth i", "elizabeth", "queen elizabeth", "queen elizabeth i", "elizabeth tudor"],
-    eraTags: ["Elizabethan", "Statesmanship"],
+    eraTags: ["English Renaissance", "Statesmanship"],
     voiceLine: "I know I have the body of a weak and feeble woman, but the heart of a king. Ready for another reign?",
     clues: [
       { text: "I was born in England in 1533.", difficulty: 'hard' },
