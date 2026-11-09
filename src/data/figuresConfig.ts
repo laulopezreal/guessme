@@ -148,7 +148,7 @@ export const allFigures: HistoricFigureConfig[] = [
       { text: "I became Emperor of France in 1804.", difficulty: 'medium' },
       { text: "I conquered much of Europe in the early 19th century.", difficulty: 'medium' },
       { text: "I was exiled twice, first to Elba and then to Saint Helena.", difficulty: 'easy' },
-      { text: "I was known for being relatively short and keeping my hand in my coat.", difficulty: 'easy' }
+      { text: "My final defeat came at the Battle of Waterloo in 1815, and I am often pictured with one hand tucked into my waistcoat.", difficulty: 'easy' }
     ]
   },
   {
