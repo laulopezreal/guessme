@@ -145,6 +145,8 @@ The game uses a strict two-color palette (navy `#001f3f` and white `#ffffff`) wi
 
 Look at the result at about 300px wide, the size most chat apps show it. Apps cache previews, often for days, so when the image changes, also change its URL in `index.html` (for example `og-image.png?v=2`).
 
+The site icons are rendered the same way from `public/favicon.svg`: with `--window-size=180,180 --default-background-color=001f3fff` the command writes `public/apple-touch-icon.png` (opaque, since iOS rounds the corners itself), and with `--window-size=32,32 --default-background-color=00000000` it writes a transparent 32×32 PNG that `sips -s format ico <png> --out public/favicon.ico` turns into the favicon (macOS; ImageMagick's `magick` does it elsewhere).
+
 ## 📜 Available Scripts
 
 ```bash
