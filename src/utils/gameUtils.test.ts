@@ -270,9 +270,16 @@ describe('isCloseMatch', () => {
         expect(isCloseMatch('Einstein', 'Albert Einstein')).toBe(true);
     });
 
-    it('accepts a guess that contains the whole answer', () => {
-        expect(isCloseMatch('Albert Einstein', 'einstein')).toBe(true);
-        expect(isCloseMatch('queen elizabeth the first', 'elizabeth')).toBe(true);
+    it("accepts a guess that adds words of the figure's names to the whole answer", () => {
+        expect(isCloseMatch('Albert Einstein', 'einstein', { figureNames: ['Albert Einstein', 'einstein'] })).toBe(true);
+        expect(isCloseMatch('queen elizabeth the first', 'elizabeth', { figureNames: ['Queen Elizabeth I', 'elizabeth'] })).toBe(true);
+    });
+
+    it("rejects a guess that adds a word of someone else's name to the answer", () => {
+        expect(isCloseMatch('Marie Antoinette', 'marie', { figureNames: ['Marie Curie', 'marie'] })).toBe(false);
+        expect(isCloseMatch('Elizabeth II', 'elizabeth', { figureNames: ['Queen Elizabeth I', 'elizabeth'] })).toBe(false);
+        // Without the figure's names, only the answer's own words count.
+        expect(isCloseMatch('Albert Einstein', 'einstein')).toBe(false);
     });
 
     it('rejects titles and epithets on their own', () => {
@@ -313,7 +320,7 @@ describe('isCloseMatch', () => {
     });
 
     it('accepts a guess that contains the answer only as whole words', () => {
-        expect(isCloseMatch('Anne Frank', 'frank')).toBe(true);
+        expect(isCloseMatch('Anne Frank', 'frank', { figureNames: ['Anne Frank', 'frank'] })).toBe(true);
         expect(isCloseMatch('Benjamin Franklin', 'frank')).toBe(false);
         expect(isCloseMatch('planned', 'anne')).toBe(false);
     });
@@ -340,6 +347,13 @@ describe('isCloseMatch', () => {
         expect(isCloseMatch('Charls', 'charles')).toBe(true);
         // Answers of eight or more characters forgive a wrong first letter.
         expect(isCloseMatch('Ainstein', 'einstein')).toBe(true);
+    });
+
+    it('wants the same ordinal in a near spelling', () => {
+        expect(isCloseMatch('Elizabth I', 'elizabeth i')).toBe(true);
+        expect(isCloseMatch('Elizabeth 1', 'elizabeth i')).toBe(true);
+        expect(isCloseMatch('Elizabeth II', 'elizabeth i')).toBe(false);
+        expect(isCloseMatch('Montezuma I', 'montezuma ii')).toBe(false);
     });
 });
 
@@ -408,5 +422,51 @@ describe('isCloseMatch against the roster', () => {
         expect(solves('simon bolivar', 'Simón Bolívar')).toBe(true);
         expect(solves('ibn sina', 'Avicenna')).toBe(true);
         expect(solves('King Tut', 'Tutankhamun')).toBe(true);
+    });
+});
+
+describe('isCorrectGuess with words around a name', () => {
+    it("accepts titles, initials, ordinals and words of the figure's other names", () => {
+        expect(solves('Sir Isaac Newton', 'Isaac Newton')).toBe(true);
+        expect(solves('Sir Issac Newton', 'Isaac Newton')).toBe(true);
+        expect(solves('Emperor Napoleon', 'Napoleon Bonaparte')).toBe(true);
+        expect(solves('Napoleon I', 'Napoleon Bonaparte')).toBe(true);
+        expect(solves('Napoleon the First', 'Napoleon Bonaparte')).toBe(true);
+        expect(solves('Queen Elizabeth the First', 'Queen Elizabeth I')).toBe(true);
+        expect(solves('Elizabeth the 1st', 'Queen Elizabeth I')).toBe(true);
+        expect(solves('W. A. Mozart', 'Wolfgang Amadeus Mozart')).toBe(true);
+        expect(solves('Dr. Martin Luther King Jr.', 'Martin Luther King Jr.')).toBe(true);
+        expect(solves('Is it Einstein?', 'Albert Einstein')).toBe(true);
+    });
+
+    it('accepts a short name with a title or a word of its own around it', () => {
+        expect(solves('MLK Jr', 'Martin Luther King Jr.')).toBe(true);
+        expect(solves('MLK Jr.', 'Martin Luther King Jr.')).toBe(true);
+        expect(solves('Pharaoh Tut', 'Tutankhamun')).toBe(true);
+        expect(solves('Emperor Wu', 'Wu Zetian')).toBe(true);
+    });
+
+    it('does not let someone who shares a first name or a surname win', () => {
+        expect(solves('Marie Antoinette', 'Marie Curie')).toBe(false);
+        expect(solves('Pierre Curie', 'Marie Curie')).toBe(false);
+        expect(solves('Louis Armstrong', 'Louis Pasteur')).toBe(false);
+        expect(solves('Louis Armstrong', 'Neil Armstrong')).toBe(false);
+        expect(solves('Joan Baez', 'Joan of Arc')).toBe(false);
+        expect(solves('Alexander Hamilton', 'Alexander the Great')).toBe(false);
+        expect(solves('Charles Dickens', 'Charles Darwin')).toBe(false);
+        expect(solves('Indira Gandhi', 'Mahatma Gandhi')).toBe(false);
+        expect(solves('Otto Frank', 'Anne Frank')).toBe(false);
+        expect(solves('Augustus Caesar', 'Julius Caesar')).toBe(false);
+    });
+
+    it('does not let a different ordinal win, even as a near spelling', () => {
+        expect(solves('Elizabeth II', 'Queen Elizabeth I')).toBe(false);
+        expect(solves('Queen Elizabeth II', 'Queen Elizabeth I')).toBe(false);
+        expect(solves('Elizabeth the Second', 'Queen Elizabeth I')).toBe(false);
+        expect(solves('Alexander II', 'Alexander the Great')).toBe(false);
+        expect(solves('Catherine I', 'Catherine the Great')).toBe(false);
+        expect(solves('Charles I', 'Charles Darwin')).toBe(false);
+        expect(solves('Napoleon III', 'Napoleon Bonaparte')).toBe(false);
+        expect(solves('Martin Luther King Sr.', 'Martin Luther King Jr.')).toBe(false);
     });
 });

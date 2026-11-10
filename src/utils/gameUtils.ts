@@ -166,9 +166,10 @@ export function levenshteinDistance(a: string, b: string): number {
 /**
  * Lowercase words that never identify a figure on their own: articles,
  * particles, titles and epithets. They are dropped from the AI-mode guess
- * tokens, never make a partial match in Classic mode, and a guess made only of
- * them never wins as a near spelling, so "queen", "great" or "empress" alone
- * cannot solve a figure.
+ * tokens. In Classic mode they never make a partial match, an answer made only
+ * of them is never found inside a longer guess, and a guess made only of them
+ * never wins as a near spelling, so "queen", "great" or "empress" alone cannot
+ * solve a figure.
  */
 const NAME_TOKEN_STOPWORDS = new Set([
   'the', 'of', 'and', 'von', 'van', 'della',
@@ -220,6 +221,122 @@ function withoutLeadingThe(words: string[]): string[] {
 const FIRST_LETTER_MAX_LENGTH = 7;
 
 /**
+ * Whether `guess` is a near spelling of `answer`: one edit (a letter added,
+ * dropped or changed) from an answer of up to four characters, two up to nine
+ * and three beyond, with the right first letter for an answer of up to
+ * FIRST_LETTER_MAX_LENGTH characters.
+ */
+function isNearSpelling(guess: string, answer: string): boolean {
+  if (answer.length <= FIRST_LETTER_MAX_LENGTH && guess[0] !== answer[0]) return false;
+  const maxErrors = Math.min(3, Math.floor(answer.length / 5) + 1);
+  return levenshteinDistance(guess, answer) <= maxErrors;
+}
+
+/** Words that join the parts of a name: "Leonardo da Vinci", "Joan of Arc", "Elizabeth the First". */
+const NAME_JOINING_WORDS = new Set(['the', 'of', 'and', 'da', 'de', 'di', 'del', 'della', 'van', 'von', 'du', 'le', 'la', 'el', 'y']);
+
+/**
+ * Titles and honorifics a guess may put around any answer: "Sir Isaac Newton",
+ * "Emperor Napoleon", "Dr. King". They are not checked against the figure, so
+ * "King Charles" still wins for Charles Darwin through "charles".
+ */
+const GUESS_TITLES = new Set([
+  'queen', 'king', 'emperor', 'empress', 'prince', 'princess', 'duke', 'duchess', 'pope', 'saint', 'st',
+  'lord', 'lady', 'pharaoh', 'sultan', 'mansa', 'tsar', 'czar', 'tsarina', 'czarina', 'count', 'countess',
+  'sir', 'dame', 'general', 'president', 'doctor', 'dr', 'madame', 'mr', 'mrs', 'ms', 'miss',
+  'professor', 'prof', 'rev', 'reverend', 'mahatma', 'admiral', 'master', 'captain', 'commander', 'prime', 'minister',
+]);
+
+/** Words that turn a guess into a question: "Is it Einstein?". "I" is left out because it is also an ordinal ("Charles I"). */
+const GUESS_QUESTION_WORDS = new Set([
+  'is', 'it', "it's", 'its', 'are', 'you', "you're", 'maybe', 'perhaps', 'probably', 'my', 'guess', 'answer', 'think', 'obviously',
+]);
+
+const ROMAN_NUMERALS = ['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix', 'x', 'xi', 'xii', 'xiii', 'xiv', 'xv', 'xvi'];
+const ORDINAL_WORDS = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth'];
+const ORDINAL_ABBREVIATIONS = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th'];
+
+/**
+ * Each way of writing an ordinal, mapped to the Roman numeral it means: "I",
+ * "1", "1st" and "first" are one ordinal, and "Jr." and "junior" another.
+ */
+const ORDINALS = new Map<string, string>([
+  ...ROMAN_NUMERALS.flatMap((numeral, index): [string, string][] => [[numeral, numeral], [String(index + 1), numeral]]),
+  ...ORDINAL_WORDS.map((word, index): [string, string] => [word, ROMAN_NUMERALS[index]]),
+  ...ORDINAL_ABBREVIATIONS.map((word, index): [string, string] => [word, ROMAN_NUMERALS[index]]),
+  ['jr', 'jr'], ['junior', 'jr'], ['sr', 'sr'], ['senior', 'sr'],
+]);
+
+/** The ordinals among some words, sorted, so "Elizabeth the 1st" and "Elizabeth I" both give "i". */
+function ordinalsIn(words: string[]): string {
+  return words.flatMap(word => ORDINALS.get(word) ?? []).sort().join(' ');
+}
+
+/** What a guess may add around one of a figure's names, worked out from all of them. */
+interface FigureWords {
+  /** Every word of every name. */
+  words: Set<string>;
+  /** The first letters of those words, for initials ("W. A. Mozart"). */
+  initials: Set<string>;
+  /** The figure's own ordinals, such as "i" for Elizabeth I and "jr" for Martin Luther King Jr. */
+  ordinals: Set<string>;
+}
+
+function figureWords(names: readonly string[]): FigureWords {
+  const words = new Set(names.flatMap(name => nameWords(name)));
+  const initials = new Set<string>();
+  const ordinals = new Set<string>();
+  for (const word of words) {
+    const ordinal = ORDINALS.get(word);
+    if (ordinal) ordinals.add(ordinal);
+    else if (!NAME_JOINING_WORDS.has(word)) initials.add(word[0]);
+  }
+  return { words, initials, ordinals };
+}
+
+/**
+ * Whether a word that a guess adds around an answer still points at the same
+ * figure: one of the figure's own words, an initial of one, its own ordinal,
+ * a near spelling of one of its distinctive words ("Issac" for "isaac"), a
+ * title, a joining word or a question word.
+ */
+function belongsWithFigure(word: string, figure: FigureWords): boolean {
+  if (figure.words.has(word) || NAME_JOINING_WORDS.has(word)) return true;
+  if (GUESS_TITLES.has(word) || GUESS_QUESTION_WORDS.has(word)) return true;
+  if (word.length === 1 && figure.initials.has(word)) return true;
+  const ordinal = ORDINALS.get(word);
+  if (ordinal) return figure.ordinals.has(ordinal);
+  return word.length >= 4 && [...figure.words].some(own => isDistinctive(own) && isNearSpelling(word, own));
+}
+
+/**
+ * Whether the guess holds the whole answer as consecutive words and every
+ * other word in it belongs with the figure. The answer needs a word that is
+ * not a stopword, so "the queen of england" never wins through "queen".
+ */
+function containsAnswer(guessWords: string[], answerWords: string[], figureNames: readonly string[]): boolean {
+  if (answerWords.every(word => NAME_TOKEN_STOPWORDS.has(word))) return false;
+  for (let start = 0; start + answerWords.length <= guessWords.length; start++) {
+    if (!answerWords.every((word, offset) => guessWords[start + offset] === word)) continue;
+    const figure = figureWords(figureNames);
+    const extraWords = [...guessWords.slice(0, start), ...guessWords.slice(start + answerWords.length)];
+    if (extraWords.every(word => belongsWithFigure(word, figure))) return true;
+  }
+  return false;
+}
+
+export interface CloseMatchOptions {
+  /** Let part of the answer win ("Einstein" for "Albert Einstein"). Pass false for an answer that must be typed in full. */
+  allowPart?: boolean;
+  /**
+   * Every name of the figure the answer belongs to. A guess may add their
+   * words around the answer ("Albert Einstein" for "einstein"). Defaults to
+   * the answer alone.
+   */
+  figureNames?: readonly string[];
+}
+
+/**
  * Whether a guess matches one answer, comparing whole words and ignoring
  * case, punctuation and a leading "the". The guess matches when it:
  * - is the answer;
@@ -227,14 +344,23 @@ const FIRST_LETTER_MAX_LENGTH = 7;
  *   ("Einstein" for "Albert Einstein", but not "night" for "Nightingale" or
  *   "the great" for "Alexander the Great"). Pass `allowPart: false` for an
  *   answer that must be typed in full;
- * - contains the whole answer, when the answer has a distinctive word
- *   ("Albert Einstein" for "einstein");
- * - or is a near spelling: one edit (a letter added, dropped or changed) from
- *   an answer of up to four characters, two up to nine and three beyond. The
- *   guess needs a word that is not a stopword, and an answer of up to
- *   FIRST_LETTER_MAX_LENGTH characters needs the right first letter.
+ * - contains the whole answer, when every other word belongs with the
+ *   figure: a word of one of `figureNames`, an initial or near spelling of
+ *   one, the figure's own ordinal, a title, a joining word such as "the" or
+ *   "da", or a question word. So "Sir Isaac Newton", "W. A. Mozart" and "Is
+ *   it Einstein?" win, but "Marie Antoinette" does not win through "marie",
+ *   nor "Elizabeth II" through "elizabeth";
+ * - or is a near spelling with the same ordinals: one edit (a letter added,
+ *   dropped or changed) from an answer of up to four characters, two up to
+ *   nine and three beyond. The guess needs a word that is not a stopword,
+ *   and an answer of up to FIRST_LETTER_MAX_LENGTH characters needs the right
+ *   first letter.
  */
-export function isCloseMatch(guess: string, answer: string, { allowPart = true } = {}): boolean {
+export function isCloseMatch(
+  guess: string,
+  answer: string,
+  { allowPart = true, figureNames = [answer] }: CloseMatchOptions = {}
+): boolean {
   const guessWords = withoutLeadingThe(nameWords(guess));
   const answerWords = withoutLeadingThe(nameWords(answer));
   if (guessWords.length === 0 || answerWords.length === 0) return false;
@@ -244,12 +370,11 @@ export function isCloseMatch(guess: string, answer: string, { allowPart = true }
   if (normalizedGuess === normalizedAnswer) return true;
 
   if (allowPart && containsWords(answerWords, guessWords) && guessWords.some(isDistinctive)) return true;
-  if (containsWords(guessWords, answerWords) && answerWords.some(isDistinctive)) return true;
+  if (containsAnswer(guessWords, answerWords, figureNames)) return true;
 
   if (guessWords.every(word => NAME_TOKEN_STOPWORDS.has(word))) return false;
-  if (normalizedAnswer.length <= FIRST_LETTER_MAX_LENGTH && normalizedGuess[0] !== normalizedAnswer[0]) return false;
-  const maxErrors = Math.min(3, Math.floor(normalizedAnswer.length / 5) + 1);
-  return levenshteinDistance(normalizedGuess, normalizedAnswer) <= maxErrors;
+  if (ordinalsIn(guessWords) !== ordinalsIn(answerWords)) return false;
+  return isNearSpelling(normalizedGuess, normalizedAnswer);
 }
 
 /**
@@ -257,12 +382,15 @@ export function isCloseMatch(guess: string, answer: string, { allowPart = true }
  * its alternate names. Only the name accepts part of itself ("Vinci" for
  * "Leonardo da Vinci"). An alternate name must be typed in full, typos
  * allowed, so the place or title in "catherine ii of russia" or "sultan
- * suleiman" never wins on its own.
+ * suleiman" never wins on its own. Words from any of the figure's names may
+ * surround an answer, so "Albert Einstein" wins through "einstein", while
+ * "Marie Antoinette" does not win for Marie Curie through "marie".
  */
 export function isCorrectGuess(guess: string, figure: Pick<HistoricFigure, 'name' | 'alternateNames'>): boolean {
+  const figureNames = [figure.name, ...figure.alternateNames];
   return (
-    isCloseMatch(guess, figure.name) ||
-    figure.alternateNames.some(alternate => isCloseMatch(guess, alternate, { allowPart: false }))
+    isCloseMatch(guess, figure.name, { figureNames }) ||
+    figure.alternateNames.some(alternate => isCloseMatch(guess, alternate, { allowPart: false, figureNames }))
   );
 }
 
