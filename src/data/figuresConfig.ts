@@ -155,7 +155,7 @@ export const allFigures: HistoricFigureConfig[] = [
     enabled: true,
     dailyFrom: '2026-11-04',
     name: "Joan of Arc",
-    alternateNames: ["joan", "joan of arc", "jeanne d'arc", "saint joan"],
+    alternateNames: ["joan", "joan of arc", "jeanne", "jeanne d'arc", "saint joan"],
     eraTags: ["Middle Ages", "Leadership"],
     voiceLine: "I am not afraid—I was born to do this. Shall we ride again?",
     clues: [
@@ -216,7 +216,7 @@ export const allFigures: HistoricFigureConfig[] = [
     enabled: true,
     dailyFrom: '2026-11-04',
     name: "Cleopatra",
-    alternateNames: ["cleopatra", "cleopatra vii", "queen cleopatra"],
+    alternateNames: ["cleopatra", "cleo", "cleopatra vii", "queen cleopatra"],
     eraTags: ["Ancient Egypt", "Rulers"],
     voiceLine: "Rome wrote my story; now you write the next one. Another round?",
     clues: [
@@ -714,7 +714,7 @@ export const allFigures: HistoricFigureConfig[] = [
     enabled: true,
     dailyFrom: '2026-11-04',
     name: "Mahatma Gandhi",
-    alternateNames: ["gandhi", "mahatma", "mahatma gandhi", "mohandas gandhi", "mohandas karamchand gandhi", "bapu", "gandhiji"],
+    alternateNames: ["gandhi", "mahatma", "mahatma gandhi", "mohandas", "mohandas gandhi", "mohandas karamchand gandhi", "bapu", "gandhiji"],
     eraTags: ["20th Century", "Activism"],
     voiceLine: "My life is my message. Shall we walk on together?",
     clues: [

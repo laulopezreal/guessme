@@ -10,6 +10,7 @@ import {
     getDailyPuzzle,
     hashString,
     isCloseMatch,
+    isCorrectGuess,
     msUntilNextUtcDay,
     selectDailyFigure,
     shiftDateKey,
@@ -251,14 +252,11 @@ describe('figureShortName', () => {
     });
 });
 
-/**
- * Mirrors the Classic-mode check in useGame: a guess wins when it matches the
- * figure's name or any of its alternate names.
- */
+/** Classic mode's win check against a figure on the roster. */
 function solves(guess: string, figureName: string): boolean {
     const figure = allFigures.find(candidate => candidate.name === figureName);
     if (!figure) throw new Error(`No figure named ${figureName}`);
-    return [figure.name, ...figure.alternateNames].some(answer => isCloseMatch(guess, answer));
+    return isCorrectGuess(guess, figure);
 }
 
 describe('isCloseMatch', () => {
@@ -299,6 +297,87 @@ describe('isCloseMatch', () => {
         expect(isCloseMatch('newton', 'albert einstein')).toBe(false);
         expect(isCloseMatch('abc', 'albert einstein')).toBe(false);
         expect(isCloseMatch('', 'albert einstein')).toBe(false);
+    });
+
+    it('accepts part of an answer only as whole words', () => {
+        expect(isCloseMatch('nightingale', 'florence nightingale')).toBe(true);
+        expect(isCloseMatch('luther king', 'martin luther king jr.')).toBe(true);
+        expect(isCloseMatch('night', 'florence nightingale')).toBe(false);
+        expect(isCloseMatch('ander', 'alexander the great')).toBe(false);
+    });
+
+    it('refuses part of an answer that must be typed in full, typos allowed', () => {
+        expect(isCloseMatch('russia', 'catherine ii of russia', { allowPart: false })).toBe(false);
+        expect(isCloseMatch('Catherine II of Russia', 'catherine ii of russia', { allowPart: false })).toBe(true);
+        expect(isCloseMatch('Catherine II of Rusia', 'catherine ii of russia', { allowPart: false })).toBe(true);
+    });
+
+    it('accepts a guess that contains the answer only as whole words', () => {
+        expect(isCloseMatch('Anne Frank', 'frank')).toBe(true);
+        expect(isCloseMatch('Benjamin Franklin', 'frank')).toBe(false);
+        expect(isCloseMatch('planned', 'anne')).toBe(false);
+    });
+
+    it('ignores punctuation, curly apostrophes and a leading "the"', () => {
+        expect(isCloseMatch('Wu.', 'wu')).toBe(true);
+        expect(isCloseMatch('Martin Luther King, Jr.', 'martin luther king jr.')).toBe(true);
+        expect(isCloseMatch('Jeanne d’Arc', "jeanne d'arc")).toBe(true);
+        expect(isCloseMatch('Simón Bolívar'.normalize('NFD'), 'simón bolívar')).toBe(true);
+        expect(isCloseMatch('Lady with the Lamp', 'the lady with the lamp')).toBe(true);
+        expect(isCloseMatch('Liberator', 'the liberator')).toBe(true);
+    });
+
+    it('never lets titles and stopwords alone win as a near spelling', () => {
+        // "empress" is only three letters short of "empress wu".
+        expect(isCloseMatch('empress', 'empress wu')).toBe(false);
+        expect(isCloseMatch('Empress Wu', 'empress wu')).toBe(true);
+    });
+
+    it('wants the first letter right in a near spelling of a short answer', () => {
+        expect(isCloseMatch('During', 'turing')).toBe(false);
+        expect(isCloseMatch('shares', 'charles')).toBe(false);
+        expect(isCloseMatch('Turnig', 'turing')).toBe(true);
+        expect(isCloseMatch('Charls', 'charles')).toBe(true);
+        // Answers of eight or more characters forgive a wrong first letter.
+        expect(isCloseMatch('Ainstein', 'einstein')).toBe(true);
+    });
+});
+
+describe('isCorrectGuess', () => {
+    it('accepts part of the name but wants an alternate name in full', () => {
+        expect(solves('Vinci', 'Leonardo da Vinci')).toBe(true);
+        expect(solves('Luther', 'Martin Luther King Jr.')).toBe(true);
+        expect(solves('Catherine II of Russia', 'Catherine the Great')).toBe(true);
+        expect(solves('Elizabeth Tudor', 'Queen Elizabeth I')).toBe(true);
+        expect(solves('Russia', 'Catherine the Great')).toBe(false);
+        expect(solves('Lawgiver', 'Suleiman the Magnificent')).toBe(false);
+        expect(solves('Tudor', 'Queen Elizabeth I')).toBe(false);
+    });
+
+    it('still accepts a place or title alternate typed in full', () => {
+        expect(solves('Alexander of Macedon', 'Alexander the Great')).toBe(true);
+        expect(solves('Sultan Suleiman', 'Suleiman the Magnificent')).toBe(true);
+        expect(solves('The Lady with the Lamp', 'Florence Nightingale')).toBe(true);
+        expect(solves('Lady with the Lamp', 'Florence Nightingale')).toBe(true);
+    });
+
+    it('accepts the short forms listed as alternate names', () => {
+        expect(solves('Jeanne', 'Joan of Arc')).toBe(true);
+        expect(solves('Mohandas', 'Mahatma Gandhi')).toBe(true);
+        expect(solves('Cleo', 'Cleopatra')).toBe(true);
+    });
+
+    it('does not let a word that only resembles a name win', () => {
+        expect(solves('hats', 'Hatshepsut')).toBe(false);
+        expect(solves('with', 'Florence Nightingale')).toBe(false);
+        expect(solves('Benjamin Franklin', 'Anne Frank')).toBe(false);
+    });
+
+    it('still forgives the usual misspellings', () => {
+        expect(solves('Ghandi', 'Mahatma Gandhi')).toBe(true);
+        expect(solves('Katherine the Great', 'Catherine the Great')).toBe(true);
+        expect(solves('Michaelangelo', 'Michelangelo')).toBe(true);
+        expect(solves('Nightengale', 'Florence Nightingale')).toBe(true);
     });
 });
 

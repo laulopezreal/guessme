@@ -67,7 +67,7 @@ clues: [
 - Titles: `["queen elizabeth", "elizabeth i"]`
 - Unaccented and native spellings: `["simon bolivar"]`, `["ibn sina"]`
 
-Every alternate name is a full-credit answer on its own, so leave out bare titles and epithets (`"king"`, `"the great"`) that could point at several figures. Classic mode already refuses a partial match made only of such words (see `NAME_TOKEN_STOPWORDS` in `src/utils/gameUtils.ts`), and AI mode uses the same list to tell a question like "were you great?" from a guess.
+Every alternate name is a full-credit answer on its own, so leave out bare titles and epithets (`"king"`, `"the great"`) that could point at several figures. In Classic mode only the figure's `name` accepts part of itself, as whole words: "Vinci" wins for Leonardo da Vinci, but "night" does not win for Florence Nightingale. An alternate name has to be typed in full (typos are still forgiven), so the place in `"catherine ii of russia"` never wins on its own, and a short form that should win alone, like `"cleo"` or `"jeanne"`, needs its own entry. A guess made only of titles and epithets never wins (see `NAME_TOKEN_STOPWORDS` in `src/utils/gameUtils.ts`), and AI mode uses the same list to tell a question like "were you great?" from a guess.
 
 ## Editing a Figure
 
@@ -128,7 +128,7 @@ Cycles run back to back from `DAILY_EPOCH`, and each lasts as many days as it ha
 
 3. Run `npm test`:
    - `src/data/figuresConfig.test.ts` checks every figure has exactly five clues, at least one `easy` clue, a unique id, a voice line and era tags, lower-case alternate names, that no clue contains the name or an alternate name, that no single word of a clue would win the round as a guess (apart from the exemptions listed in the test), and that no era tag, or any word of one, would win the round as a guess; it also requires at least 50 enabled figures and pins the first daily cycle day by day
-   - `src/utils/gameUtils.test.ts` checks guess matching against the roster (titles and epithets alone never win)
+   - `src/utils/gameUtils.test.ts` checks guess matching against the roster: parts of a name count only as whole words of the figure's name, alternate names must be typed in full, titles and epithets alone never win, and a near spelling of a name of up to seven characters needs the right first letter
    - The "How to Play" overlay shows how many figures are enabled
 
 ## Best Practices
@@ -143,7 +143,7 @@ Cycles run back to back from `DAILY_EPOCH`, and each lasts as many days as it ha
 
 ❌ **Don't**:
 - Reveal the name directly (a test fails if a clue contains the name or any alternate name, so "the Elizabethan era" cannot be a clue for Elizabeth I)
-- Use a word that wins the round when typed as a guess (a test fails if one does, so "the Galilean moons" cannot be a clue for Galileo Galilei, because "galilean" is two edits from "galileo", and "Bolivia" cannot be one for Simón Bolívar, because it is two edits from "bolivar"). Reword the clue. If the word wins only because the guess matcher is lenient (an ordinary word such as "During" for Alan Turing, or a place inside a long alternate name such as "Syracuse" for Archimedes), you can add it to `LENIENT_MATCH_CLUE_WORDS` in `src/data/figuresConfig.test.ts` with the reason instead
+- Use a word that wins the round when typed as a guess (a test fails if one does, so "the Galilean moons" cannot be a clue for Galileo Galilei, because "galilean" is two edits from "galileo", and "Bolivia" cannot be one for Simón Bolívar, because it is two edits from "bolivar"). Reword the clue. If the word wins only because the guess matcher forgives typos (an everyday word an edit or two from a name, such as "Paris" in a clue for Rosa Parks), you can add it to `LENIENT_MATCH_CLUE_WORDS` in `src/data/figuresConfig.test.ts` with the reason instead
 - Name another figure from the roster as if they were the answer; mentioning them as an ally or rival is fine
 - Make clues too easy at the start
 - Make clues too obscure at the end
@@ -164,7 +164,7 @@ Cycles run back to back from `DAILY_EPOCH`, and each lasts as many days as it ha
 
 ### Choosing Era Tags
 
-Era tags sit under the silhouette from the first second of a round, before any clue, so they name the period and the field, never the figure. A test fails if typing a tag, or any single word of it, would win the round. "Napoleonic Era" fails for Napoleon Bonaparte, and "Tudor England" fails for Elizabeth I because "elizabeth tudor" is one of her alternate names. A word built from another figure's name is fine: "Elizabethan" is a fair era tag for Shakespeare.
+Era tags sit under the silhouette from the first second of a round, before any clue, so they name the period and the field, never the figure. A test fails if typing a tag, or any single word of it, would win the round. "Napoleonic Era" fails for Napoleon Bonaparte, because "napoleonic" is two edits from "napoleon". A word built from another figure's name is fine: "Elizabethan" is a fair era tag for Shakespeare.
 
 ### AI Mode Considerations
 

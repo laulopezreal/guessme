@@ -166,8 +166,9 @@ export function levenshteinDistance(a: string, b: string): number {
 /**
  * Lowercase words that never identify a figure on their own: articles,
  * particles, titles and epithets. They are dropped from the AI-mode guess
- * tokens and never satisfy a partial match in Classic mode, so "queen",
- * "king" or "great" alone cannot solve a figure.
+ * tokens, never make a partial match in Classic mode, and a guess made only of
+ * them never wins as a near spelling, so "queen", "great" or "empress" alone
+ * cannot solve a figure.
  */
 const NAME_TOKEN_STOPWORDS = new Set([
   'the', 'of', 'and', 'von', 'van', 'della',
@@ -177,50 +178,92 @@ const NAME_TOKEN_STOPWORDS = new Set([
 ]);
 
 /**
- * The words of a name that are long and specific enough to point at a
- * figure: four or more letters and not a stopword.
+ * A name or a guess as lowercase words. Anything but a letter (accents
+ * included), a digit or an apostrophe separates words, so "Dr. King" is
+ * "dr king" and "Sklodowska-Curie" is "sklodowska curie". Curly apostrophes
+ * count as straight ones.
  */
-function distinctiveNameTokens(name: string): string[] {
-  return name
+function nameWords(text: string): string[] {
+  return text
+    .normalize('NFC')
     .toLowerCase()
-    .split(/\s+/)
-    .map(word => word.replace(/[^\p{L}'-]/gu, ''))
-    .filter(token => token.length >= 4 && !NAME_TOKEN_STOPWORDS.has(token));
+    .replace(/[‘’]/g, "'")
+    .split(/[^\p{L}\p{M}\p{N}']+/u)
+    .map(word => word.replace(/^'+|'+$/g, ''))
+    .filter(Boolean);
 }
 
-export function isCloseMatch(guess: string, answer: string): boolean {
-  const normalizedGuess = guess.trim().toLowerCase();
-  const normalizedAnswer = answer.trim().toLowerCase();
+/** A word long and specific enough to point at a figure: four or more letters and not a stopword. */
+function isDistinctive(word: string): boolean {
+  return word.length >= 4 && !NAME_TOKEN_STOPWORDS.has(word);
+}
 
+/** Whether `run` appears in `words` as consecutive whole words. */
+function containsWords(words: string[], run: string[]): boolean {
+  if (run.length === 0) return false;
+  for (let start = 0; start + run.length <= words.length; start++) {
+    if (run.every((word, offset) => words[start + offset] === word)) return true;
+  }
+  return false;
+}
+
+/** A leading "the" is optional: "Liberator" answers "the liberator". */
+function withoutLeadingThe(words: string[]): string[] {
+  return words.length > 1 && words[0] === 'the' ? words.slice(1) : words;
+}
+
+/**
+ * Near spellings of an answer this short (in characters) must keep its first
+ * letter: changing the first letter turns "turing" into the everyday word
+ * "during", and two edits turn "charles" into "shares".
+ */
+const FIRST_LETTER_MAX_LENGTH = 7;
+
+/**
+ * Whether a guess matches one answer, comparing whole words and ignoring
+ * case, punctuation and a leading "the". The guess matches when it:
+ * - is the answer;
+ * - is part of the answer, as whole words that include a distinctive one
+ *   ("Einstein" for "Albert Einstein", but not "night" for "Nightingale" or
+ *   "the great" for "Alexander the Great"). Pass `allowPart: false` for an
+ *   answer that must be typed in full;
+ * - contains the whole answer, when the answer has a distinctive word
+ *   ("Albert Einstein" for "einstein");
+ * - or is a near spelling: one edit (a letter added, dropped or changed) from
+ *   an answer of up to four characters, two up to nine and three beyond. The
+ *   guess needs a word that is not a stopword, and an answer of up to
+ *   FIRST_LETTER_MAX_LENGTH characters needs the right first letter.
+ */
+export function isCloseMatch(guess: string, answer: string, { allowPart = true } = {}): boolean {
+  const guessWords = withoutLeadingThe(nameWords(guess));
+  const answerWords = withoutLeadingThe(nameWords(answer));
+  if (guessWords.length === 0 || answerWords.length === 0) return false;
+
+  const normalizedGuess = guessWords.join(' ');
+  const normalizedAnswer = answerWords.join(' ');
   if (normalizedGuess === normalizedAnswer) return true;
 
-  // Partial match (e.g. "Einstein" in "Albert Einstein"). The contained text
-  // must be at least 4 characters and carry a distinctive name token, so a
-  // bare title or epithet ("queen", "king", "great") never wins on its own.
-  if (
-    normalizedGuess.length >= 4 &&
-    normalizedAnswer.includes(normalizedGuess) &&
-    distinctiveNameTokens(normalizedGuess).length > 0
-  ) {
-    return true;
-  }
+  if (allowPart && containsWords(answerWords, guessWords) && guessWords.some(isDistinctive)) return true;
+  if (containsWords(guessWords, answerWords) && answerWords.some(isDistinctive)) return true;
 
-  // Reverse partial match (e.g. the guess "Albert Einstein" contains the
-  // answer "Einstein"), under the same distinctive-token rule.
-  if (
-    normalizedAnswer.length >= 4 &&
-    normalizedGuess.includes(normalizedAnswer) &&
-    distinctiveNameTokens(normalizedAnswer).length > 0
-  ) {
-    return true;
-  }
-
-  // Fuzzy match with Levenshtein distance
-  // Allow 1 error for every 5 characters, max 3 errors
+  if (guessWords.every(word => NAME_TOKEN_STOPWORDS.has(word))) return false;
+  if (normalizedAnswer.length <= FIRST_LETTER_MAX_LENGTH && normalizedGuess[0] !== normalizedAnswer[0]) return false;
   const maxErrors = Math.min(3, Math.floor(normalizedAnswer.length / 5) + 1);
-  const distance = levenshteinDistance(normalizedGuess, normalizedAnswer);
+  return levenshteinDistance(normalizedGuess, normalizedAnswer) <= maxErrors;
+}
 
-  return distance <= maxErrors;
+/**
+ * Classic mode's win check: the guess matches the figure's name or one of
+ * its alternate names. Only the name accepts part of itself ("Vinci" for
+ * "Leonardo da Vinci"). An alternate name must be typed in full, typos
+ * allowed, so the place or title in "catherine ii of russia" or "sultan
+ * suleiman" never wins on its own.
+ */
+export function isCorrectGuess(guess: string, figure: Pick<HistoricFigure, 'name' | 'alternateNames'>): boolean {
+  return (
+    isCloseMatch(guess, figure.name) ||
+    figure.alternateNames.some(alternate => isCloseMatch(guess, alternate, { allowPart: false }))
+  );
 }
 
 /**
@@ -233,8 +276,8 @@ export function getFigureNameTokens(figures: HistoricFigure[]): string[] {
   const tokens = new Set<string>();
   for (const figure of figures) {
     for (const name of [figure.name, ...figure.alternateNames]) {
-      for (const token of distinctiveNameTokens(name)) {
-        tokens.add(token);
+      for (const word of nameWords(name)) {
+        if (isDistinctive(word)) tokens.add(word);
       }
     }
   }

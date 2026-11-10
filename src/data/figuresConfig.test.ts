@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { HistoricFigure } from '../types';
 import { allFigures, figureId, getEnabledFigures, getFigureById, getFigureCount } from './figuresConfig';
-import { DAILY_EPOCH, getFigureNameTokens, isCloseMatch, selectDailyFigure, shiftDateKey } from '../utils/gameUtils';
+import { DAILY_EPOCH, getFigureNameTokens, isCorrectGuess, selectDailyFigure, shiftDateKey } from '../utils/gameUtils';
 
 /**
  * The first daily cycle as it shipped, one name per day from 2026-11-04.
@@ -70,14 +70,6 @@ const FIRST_DAILY_CYCLE = [
     "Archimedes",
 ];
 
-/**
- * Mirrors the Classic-mode check in useGame: a guess wins when it matches the
- * figure's name or any of its alternate names.
- */
-function winsRound(guess: string, figure: HistoricFigure): boolean {
-    return [figure.name, ...figure.alternateNames].some(answer => isCloseMatch(guess, answer));
-}
-
 /** What a player could copy from an era tag into the guess box: the whole tag, or any one word. */
 function guessesFromTag(tag: string): string[] {
     return [tag, ...tag.split(/[^\p{L}\p{N}']+/u).filter(Boolean)];
@@ -95,31 +87,13 @@ function guessesFromClue(text: string): string[] {
 }
 
 /**
- * Clue words that win the round only because the matcher is lenient, not
- * because the clue names the figure: ordinary words ("During" for Alan Turing)
- * and fair hints ("Syracuse" for Archimedes). Whether the matcher should keep
- * accepting them is a separate decision, so the clues keep them. Delete an
- * entry once its word stops winning; a test below fails until you do.
+ * Clue words that win the round only because the matcher forgives typos, not
+ * because the clue names the figure: an everyday word one edit from a name,
+ * such as "Paris" in a clue for Rosa Parks ("parks"). Each entry is
+ * `[figure name, word]` with the reason in a comment. Delete an entry once its
+ * word stops winning; a test below fails until you do.
  */
-const LENIENT_MATCH_CLUE_WORDS: [name: string, word: string][] = [
-    // Near spellings: the fuzzy match allows two edits in an answer of 5-9 characters and three in a longer one.
-    ['Charles Darwin', 'shares'], // two edits from "charles"
-    ['Alan Turing', 'During'], // one edit from "turing"
-    ['Wu Zetian', 'empress'], // three characters short of "empress wu": the fuzzy match lets in a title the partial match blocks
-    // Fragments: any piece of an answer that is four or more letters long and
-    // not on the stopword list wins, so part of a name, or a place, title or
-    // epithet in a longer alternate name, wins on its own.
-    ['Florence Nightingale', 'night'], // inside "nightingale"
-    ['Florence Nightingale', 'lamp'], // inside "the lady with the lamp"
-    ['Hatshepsut', 'pharaoh'], // inside "pharaoh hatshepsut"
-    ['Zheng He', 'admiral'], // inside "admiral zheng he"
-    ['Suleiman the Magnificent', 'sultan'], // inside "sultan suleiman"
-    ['Suleiman the Magnificent', 'Lawgiver'], // inside "suleiman the lawgiver"
-    ['Mansa Musa', 'Mali'], // inside "musa i of mali"
-    ['Alexander the Great', 'Macedon'], // inside "alexander of macedon"
-    ['Catherine the Great', 'Russia'], // inside "catherine ii of russia"
-    ['Archimedes', 'Syracuse'], // inside "archimedes of syracuse"
-];
+const LENIENT_MATCH_CLUE_WORDS: [name: string, word: string][] = [];
 
 function isLenientMatchClueWord(figure: HistoricFigure, guess: string): boolean {
     return LENIENT_MATCH_CLUE_WORDS.some(([name, word]) => name === figure.name && word.toLowerCase() === guess.toLowerCase());
@@ -179,7 +153,7 @@ describe('figuresConfig', () => {
         for (const figure of allFigures) {
             for (const tag of figure.eraTags ?? []) {
                 for (const guess of guessesFromTag(tag)) {
-                    expect(winsRound(guess, figure), `${figure.name}: typing "${guess}" from the era tag "${tag}" wins`).toBe(false);
+                    expect(isCorrectGuess(guess, figure), `${figure.name}: typing "${guess}" from the era tag "${tag}" wins`).toBe(false);
                 }
             }
         }
@@ -190,11 +164,10 @@ describe('figuresConfig', () => {
         const giveaways: [name: string, tag: string][] = [
             ['Napoleon Bonaparte', 'Napoleonic Era'],
             ['Queen Elizabeth I', 'Elizabethan'],
-            ['Queen Elizabeth I', 'Tudor England'], // "elizabeth tudor" is an accepted answer
         ];
         for (const [name, tag] of giveaways) {
             const figure = allFigures.find(candidate => candidate.name === name);
-            expect(figure && guessesFromTag(tag).some(guess => winsRound(guess, figure)), `${name}: "${tag}"`).toBe(true);
+            expect(figure && guessesFromTag(tag).some(guess => isCorrectGuess(guess, figure)), `${name}: "${tag}"`).toBe(true);
         }
     });
 
@@ -204,7 +177,7 @@ describe('figuresConfig', () => {
         for (const figure of allFigures) {
             for (const clue of figure.clues) {
                 for (const guess of guessesFromClue(clue.text)) {
-                    if (winsRound(guess, figure) && !isLenientMatchClueWord(figure, guess)) {
+                    if (isCorrectGuess(guess, figure) && !isLenientMatchClueWord(figure, guess)) {
                         winning.push(`${figure.name}: typing "${guess}" from "${clue.text}" wins`);
                     }
                 }
@@ -221,7 +194,7 @@ describe('figuresConfig', () => {
         ];
         for (const [name, clue] of giveaways) {
             const figure = allFigures.find(candidate => candidate.name === name);
-            expect(figure && guessesFromClue(clue).some(guess => winsRound(guess, figure)), `${name}: "${clue}"`).toBe(true);
+            expect(figure && guessesFromClue(clue).some(guess => isCorrectGuess(guess, figure)), `${name}: "${clue}"`).toBe(true);
         }
     });
 
@@ -230,7 +203,7 @@ describe('figuresConfig', () => {
         for (const [name, word] of LENIENT_MATCH_CLUE_WORDS) {
             const figure = allFigures.find(candidate => candidate.name === name);
             const inClue = figure?.clues.some(clue => guessesFromClue(clue.text).some(guess => guess.toLowerCase() === word.toLowerCase()));
-            expect(inClue && figure && winsRound(word, figure), `${name}: "${word}" no longer wins or left the clues, so drop its exemption`).toBe(true);
+            expect(inClue && figure && isCorrectGuess(word, figure), `${name}: "${word}" no longer wins or left the clues, so drop its exemption`).toBe(true);
         }
     });
 

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
 import { allFigures, getEnabledFigures, toFigure } from '../data/figuresConfig';
-import { calculatePoints, shuffleArray, selectNextClue, llmScoreWeights, isCloseMatch, getFigureNameTokens, getDailyPuzzle, utcDateKey, DAILY_ASK_LIMIT } from '../utils/gameUtils';
+import { calculatePoints, shuffleArray, selectNextClue, llmScoreWeights, isCorrectGuess, getFigureNameTokens, getDailyPuzzle, utcDateKey, DAILY_ASK_LIMIT } from '../utils/gameUtils';
 import { AiRequestError, converseWithFigure, describeAiError, fetchAiStatus, getInitialGreeting, sendMessage, validateGuess } from '../services/llmService';
 import { rememberGameMode, type GameMode } from '../services/gameMode';
 import { getDailyResult, loadDailyStats, recordDailyResult, saveDailyStats, setDailyQuestionsAsked } from '../services/dailyStats';
@@ -424,13 +424,8 @@ export function useGame() {
             return;
         }
 
-        // Classic mode: fuzzy string matching
-        const correctAnswers = [
-            currentFigure.name,
-            ...currentFigure.alternateNames
-        ];
-
-        const isCorrect = correctAnswers.some(answer => isCloseMatch(guess, answer));
+        // Classic mode: the name or an alternate name, with typos forgiven
+        const isCorrect = isCorrectGuess(guess, currentFigure);
 
         if (isCorrect) {
             // Correct guess
