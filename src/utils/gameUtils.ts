@@ -334,6 +334,12 @@ export interface CloseMatchOptions {
    * the answer alone.
    */
   figureNames?: readonly string[];
+  /**
+   * Let a near spelling win (the default). isCorrectGuess uses it to stop a
+   * guess that is exactly another figure's name winning as a typo: that
+   * guess names the other figure rather than misspelling this answer.
+   */
+  allowNearSpelling?: boolean;
 }
 
 /**
@@ -350,16 +356,16 @@ export interface CloseMatchOptions {
  *   "da", or a question word. So "Sir Isaac Newton", "W. A. Mozart" and "Is
  *   it Einstein?" win, but "Marie Antoinette" does not win through "marie",
  *   nor "Elizabeth II" through "elizabeth";
- * - or is a near spelling with the same ordinals: one edit (a letter added,
- *   dropped or changed) from an answer of up to four characters, two up to
- *   nine and three beyond. The guess needs a word that is not a stopword,
- *   and an answer of up to FIRST_LETTER_MAX_LENGTH characters needs the right
- *   first letter.
+ * - or, unless `allowNearSpelling` is false, is a near spelling with the
+ *   same ordinals: one edit (a letter added, dropped or changed) from an
+ *   answer of up to four characters, two up to nine and three beyond. The
+ *   guess needs a word that is not a stopword, and an answer of up to
+ *   FIRST_LETTER_MAX_LENGTH characters needs the right first letter.
  */
 export function isCloseMatch(
   guess: string,
   answer: string,
-  { allowPart = true, figureNames = [answer] }: CloseMatchOptions = {}
+  { allowPart = true, figureNames = [answer], allowNearSpelling = true }: CloseMatchOptions = {}
 ): boolean {
   const guessWords = withoutLeadingThe(nameWords(guess));
   const answerWords = withoutLeadingThe(nameWords(answer));
@@ -372,9 +378,25 @@ export function isCloseMatch(
   if (allowPart && containsWords(answerWords, guessWords) && guessWords.some(isDistinctive)) return true;
   if (containsAnswer(guessWords, answerWords, figureNames)) return true;
 
+  if (!allowNearSpelling) return false;
   if (guessWords.every(word => NAME_TOKEN_STOPWORDS.has(word))) return false;
   if (ordinalsIn(guessWords) !== ordinalsIn(answerWords)) return false;
   return isNearSpelling(normalizedGuess, normalizedAnswer);
+}
+
+/** What the win check needs to know about a figure on the roster. */
+export interface NamedEntry extends Pick<HistoricFigure, 'name' | 'alternateNames'> {
+  /** A disabled figure is out of the game, so its names do not count. Missing means enabled. */
+  enabled?: boolean;
+}
+
+/** Whether a guess is exactly a name or alternate name of an enabled figure on the roster, compared as isCloseMatch compares them. */
+function isRosterName(guess: string, roster: readonly NamedEntry[]): boolean {
+  const comparable = (text: string) => withoutLeadingThe(nameWords(text)).join(' ');
+  const guessName = comparable(guess);
+  return roster.some(
+    figure => figure.enabled !== false && [figure.name, ...figure.alternateNames].some(name => comparable(name) === guessName)
+  );
 }
 
 /**
@@ -384,14 +406,26 @@ export function isCloseMatch(
  * allowed, so the place or title in "catherine ii of russia" or "sultan
  * suleiman" never wins on its own. Words from any of the figure's names may
  * surround an answer, so "Albert Einstein" wins through "einstein", while
- * "Marie Antoinette" does not win for Marie Curie through "marie".
+ * "Marie Antoinette" does not win for Marie Curie through "marie". A guess
+ * that is exactly another figure's name never wins as a near spelling, so
+ * "Newton" does not win for Nelson Mandela, two edits from "nelson".
+ *
+ * Pass the whole roster (`allFigures`), not the round's figures: in Daily the
+ * round holds only today's figure. Disabled figures are skipped.
  */
-export function isCorrectGuess(guess: string, figure: Pick<HistoricFigure, 'name' | 'alternateNames'>): boolean {
+export function isCorrectGuess(
+  guess: string,
+  figure: Pick<HistoricFigure, 'name' | 'alternateNames'>,
+  roster: readonly NamedEntry[]
+): boolean {
   const figureNames = [figure.name, ...figure.alternateNames];
-  return (
-    isCloseMatch(guess, figure.name, { figureNames }) ||
-    figure.alternateNames.some(alternate => isCloseMatch(guess, alternate, { allowPart: false, figureNames }))
-  );
+  const matches = (allowNearSpelling: boolean) =>
+    isCloseMatch(guess, figure.name, { figureNames, allowNearSpelling }) ||
+    figure.alternateNames.some(alternate => isCloseMatch(guess, alternate, { allowPart: false, figureNames, allowNearSpelling }));
+  if (matches(false)) return true;
+  // Only a near spelling is left. The guess is none of this figure's own names
+  // (those match above), so a name on the roster belongs to someone else.
+  return matches(true) && !isRosterName(guess, roster);
 }
 
 /**

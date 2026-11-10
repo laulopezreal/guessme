@@ -153,7 +153,7 @@ describe('figuresConfig', () => {
         for (const figure of allFigures) {
             for (const tag of figure.eraTags ?? []) {
                 for (const guess of guessesFromTag(tag)) {
-                    expect(isCorrectGuess(guess, figure), `${figure.name}: typing "${guess}" from the era tag "${tag}" wins`).toBe(false);
+                    expect(isCorrectGuess(guess, figure, allFigures), `${figure.name}: typing "${guess}" from the era tag "${tag}" wins`).toBe(false);
                 }
             }
         }
@@ -167,7 +167,7 @@ describe('figuresConfig', () => {
         ];
         for (const [name, tag] of giveaways) {
             const figure = allFigures.find(candidate => candidate.name === name);
-            expect(figure && guessesFromTag(tag).some(guess => isCorrectGuess(guess, figure)), `${name}: "${tag}"`).toBe(true);
+            expect(figure && guessesFromTag(tag).some(guess => isCorrectGuess(guess, figure, allFigures)), `${name}: "${tag}"`).toBe(true);
         }
     });
 
@@ -177,7 +177,7 @@ describe('figuresConfig', () => {
         for (const figure of allFigures) {
             for (const clue of figure.clues) {
                 for (const guess of guessesFromClue(clue.text)) {
-                    if (isCorrectGuess(guess, figure) && !isLenientMatchClueWord(figure, guess)) {
+                    if (isCorrectGuess(guess, figure, allFigures) && !isLenientMatchClueWord(figure, guess)) {
                         winning.push(`${figure.name}: typing "${guess}" from "${clue.text}" wins`);
                     }
                 }
@@ -194,8 +194,25 @@ describe('figuresConfig', () => {
         ];
         for (const [name, clue] of giveaways) {
             const figure = allFigures.find(candidate => candidate.name === name);
-            expect(figure && guessesFromClue(clue).some(guess => isCorrectGuess(guess, figure)), `${name}: "${clue}"`).toBe(true);
+            expect(figure && guessesFromClue(clue).some(guess => isCorrectGuess(guess, figure, allFigures)), `${name}: "${clue}"`).toBe(true);
         }
+    });
+
+    it("never lets one figure's name or alternate name win the round for another figure", () => {
+        // A player who types another figure's name means that figure, so "Newton" must not solve Nelson Mandela.
+        const winning: string[] = [];
+        for (const figure of allFigures) {
+            const ownNames = new Set([figure.name, ...figure.alternateNames].map(name => name.toLowerCase()));
+            for (const other of allFigures) {
+                if (other === figure) continue;
+                for (const name of [other.name, ...other.alternateNames]) {
+                    if (!ownNames.has(name.toLowerCase()) && isCorrectGuess(name, figure, allFigures)) {
+                        winning.push(`${figure.name}: typing "${name}" (${other.name}) wins`);
+                    }
+                }
+            }
+        }
+        expect(winning).toEqual([]);
     });
 
     it('exempts only clue words that are still in a clue and still win', () => {
@@ -203,7 +220,7 @@ describe('figuresConfig', () => {
         for (const [name, word] of LENIENT_MATCH_CLUE_WORDS) {
             const figure = allFigures.find(candidate => candidate.name === name);
             const inClue = figure?.clues.some(clue => guessesFromClue(clue.text).some(guess => guess.toLowerCase() === word.toLowerCase()));
-            expect(inClue && figure && isCorrectGuess(word, figure), `${name}: "${word}" no longer wins or left the clues, so drop its exemption`).toBe(true);
+            expect(inClue && figure && isCorrectGuess(word, figure, allFigures), `${name}: "${word}" no longer wins or left the clues, so drop its exemption`).toBe(true);
         }
     });
 

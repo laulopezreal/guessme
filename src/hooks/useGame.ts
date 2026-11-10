@@ -424,8 +424,10 @@ export function useGame() {
             return;
         }
 
-        // Classic mode: the name or an alternate name, with typos forgiven
-        const isCorrect = isCorrectGuess(guess, currentFigure);
+        // Classic mode: the name or an alternate name, with typos forgiven. The whole
+        // roster, not shuffledFigures (only today's figure in Daily), so another
+        // figure's name never counts as a typo.
+        const isCorrect = isCorrectGuess(guess, currentFigure, allFigures);
 
         if (isCorrect) {
             // Correct guess
