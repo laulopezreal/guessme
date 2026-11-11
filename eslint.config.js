@@ -6,7 +6,9 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist', 'node_modules', '.wrangler', 'worker-configuration.d.ts', 'script-vanilla.js']),
+  // .claude/worktrees holds Claude Code's git worktrees, each a full checkout that
+  // lints itself. Git skips them through .git/info/exclude, which ESLint doesn't read.
+  globalIgnores(['dist', 'node_modules', '.wrangler', 'worker-configuration.d.ts', 'script-vanilla.js', '.claude/worktrees']),
   {
     files: ['src/**/*.{ts,tsx}'],
     extends: [
