@@ -140,7 +140,7 @@ export const allFigures: HistoricFigureConfig[] = [
     enabled: true,
     dailyFrom: '2026-11-04',
     name: "Napoleon Bonaparte",
-    alternateNames: ["napoleon", "bonaparte", "napoleon bonaparte"],
+    alternateNames: ["napoleon", "bonaparte", "napoleon bonaparte", "napoleon i"],
     eraTags: ["French Revolution", "Military"],
     voiceLine: "Impossible is a word to be found only in the dictionary of fools. March to the next battle?",
     clues: [
