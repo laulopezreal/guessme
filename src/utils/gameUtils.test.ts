@@ -256,7 +256,7 @@ describe('figureShortName', () => {
 function solves(guess: string, figureName: string): boolean {
     const figure = allFigures.find(candidate => candidate.name === figureName);
     if (!figure) throw new Error(`No figure named ${figureName}`);
-    return isCorrectGuess(guess, figure);
+    return isCorrectGuess(guess, figure, allFigures);
 }
 
 describe('isCloseMatch', () => {
@@ -354,6 +354,13 @@ describe('isCloseMatch', () => {
         expect(isCloseMatch('Elizabeth 1', 'elizabeth i')).toBe(true);
         expect(isCloseMatch('Elizabeth II', 'elizabeth i')).toBe(false);
         expect(isCloseMatch('Montezuma I', 'montezuma ii')).toBe(false);
+    });
+
+    it('turns off only near spellings when asked', () => {
+        expect(isCloseMatch('Nelsen', 'nelson', { allowNearSpelling: false })).toBe(false);
+        expect(isCloseMatch('Nelson', 'nelson', { allowNearSpelling: false })).toBe(true);
+        expect(isCloseMatch('Einstein', 'Albert Einstein', { allowNearSpelling: false })).toBe(true);
+        expect(isCloseMatch('Sir Isaac Newton', 'isaac newton', { allowNearSpelling: false })).toBe(true);
     });
 });
 
@@ -468,5 +475,49 @@ describe('isCorrectGuess with words around a name', () => {
         expect(solves('Charles I', 'Charles Darwin')).toBe(false);
         expect(solves('Napoleon III', 'Napoleon Bonaparte')).toBe(false);
         expect(solves('Martin Luther King Sr.', 'Martin Luther King Jr.')).toBe(false);
+    });
+});
+
+describe("isCorrectGuess with another figure's name", () => {
+    it("never lets another figure's exact name win as a near spelling", () => {
+        expect(solves('Newton', 'Nelson Mandela')).toBe(false); // two edits from "nelson"
+        expect(solves('Nelson', 'Isaac Newton')).toBe(false);
+        expect(solves('Marie', 'Marco Polo')).toBe(false);
+        expect(solves('Marie', 'Zheng He')).toBe(false); // "ma he"
+        expect(solves('Marie', 'Martin Luther King Jr.')).toBe(false); // "martin"
+        expect(solves('Marco', 'Marie Curie')).toBe(false);
+        expect(solves('Martin', 'Marie Curie')).toBe(false);
+        expect(solves('Ma He', 'Marie Curie')).toBe(false);
+        expect(solves('Jane', 'Joan of Arc')).toBe(false); // "jeanne"
+        expect(solves('Polo', 'Pablo Picasso')).toBe(false); // "pablo"
+        expect(solves('NEWTON!', 'Nelson Mandela')).toBe(false);
+    });
+
+    it('still lets those names win for their own figures, and typos win as before', () => {
+        expect(solves('Newton', 'Isaac Newton')).toBe(true);
+        expect(solves('Nelson', 'Nelson Mandela')).toBe(true);
+        expect(solves('Marie', 'Marie Curie')).toBe(true);
+        expect(solves('Marco', 'Marco Polo')).toBe(true);
+        expect(solves('Martin', 'Martin Luther King Jr.')).toBe(true);
+        expect(solves('Ma He', 'Zheng He')).toBe(true);
+        expect(solves('Jane', 'Jane Austen')).toBe(true);
+        expect(solves('Polo', 'Marco Polo')).toBe(true);
+        expect(solves('Nelsen', 'Nelson Mandela')).toBe(true);
+        expect(solves('Jeane', 'Joan of Arc')).toBe(true);
+    });
+
+    it('checks the roster it is given and skips disabled figures', () => {
+        const mandela = { name: 'Nelson Mandela', alternateNames: ['nelson'] };
+        const newton = { name: 'Isaac Newton', alternateNames: ['newton'] };
+        expect(isCorrectGuess('newton', mandela, [mandela, newton])).toBe(false);
+        expect(isCorrectGuess('newton', mandela, [mandela, { ...newton, enabled: false }])).toBe(true);
+        expect(isCorrectGuess('newton', mandela, [mandela])).toBe(true);
+        expect(isCorrectGuess('nelson', mandela, [mandela, newton])).toBe(true);
+    });
+
+    it("stops only near spellings: another figure's name that is part of this one's still wins", () => {
+        const king = { name: 'Martin Luther King Jr.', alternateNames: ['martin'] };
+        const luther = { name: 'Martin Luther', alternateNames: [] };
+        expect(isCorrectGuess('Martin Luther', king, [king, luther])).toBe(true);
     });
 });
